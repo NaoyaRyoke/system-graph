@@ -1,6 +1,6 @@
 """Fail closed on scan errors, new findings, stale evidence or unresolved exposure."""
 from pathlib import Path
-import json,sys,datetime,hashlib
+import json,sys,datetime,hashlib,re
 R=Path(__file__).resolve().parents[1];A=R/'artifacts'
 app=json.loads((A/'osv.json').read_text(encoding='utf8'))
 osfile=A/'os-vulnerabilities.json';errors=list(app['errors']);blocking=[];raw={}
@@ -11,7 +11,14 @@ if osfile.exists():
  else:
   review=json.loads(reviewfile.read_text(encoding='utf8'));rows={r['id']:r for r in review['reviews']}
   if datetime.date.fromisoformat(review['review_before'])<datetime.date.today():errors.append('OS review expired')
-  if hashlib.sha256(manifest.read_bytes()).hexdigest()!=review['runtime_manifest_sha256']:errors.append('runtime evidence changed; reassess')
+  if review.get('runtime_fingerprint_version')=='manifest-v1-without-volatile-link-map':
+   evidence=json.loads(manifest.read_text(encoding='utf8'))
+   native=evidence.get('nativeEvidence',{})
+   link_map=native.pop('engineLinkMapSha256',None)
+   if not isinstance(link_map,str)or not re.fullmatch(r'[0-9a-f]{64}',link_map):errors.append('link-map evidence missing or invalid')
+   fingerprint=hashlib.sha256(json.dumps(evidence,sort_keys=True,separators=(',',':')).encode()).hexdigest()
+   if fingerprint!=review.get('runtime_security_fingerprint_sha256'):errors.append('runtime evidence changed; reassess')
+  elif hashlib.sha256(manifest.read_bytes()).hexdigest()!=review['runtime_manifest_sha256']:errors.append('runtime evidence changed; reassess')
   for v in scan['advisories']:
    row=rows.get(v['id'])
    if row is None or row['disposition'] not in ['FIX','FIXED','NOT AFFECTED','ACCEPT FOR BETA','ACCEPTED WITH EVIDENCE']:blocking.append(v['id'])

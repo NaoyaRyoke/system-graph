@@ -9,9 +9,9 @@ RUN cargo rustc --manifest-path rust-host/Cargo.toml --release --locked --target
 RUN cargo metadata --manifest-path rust-host/Cargo.toml --locked --format-version 1 --filter-platform "$(rustc -vV | sed -n 's/^host: //p')" > /build/cargo-metadata.json
 RUN mkdir -p /build/rust-license && cp -a "$(rustc --print sysroot)"/share/doc/rust/COPYRIGHT*.html "$(rustc --print sysroot)"/share/doc/rust/licenses /build/rust-license/
 FROM rustbuild AS storeverification
-RUN cp rust-host/Cargo.lock vendor/engine/Cargo.lock && cargo generate-lockfile --manifest-path vendor/engine/Cargo.toml --offline && chown -R 10001:10001 /build /usr/local/cargo
+RUN cp rust-host/Cargo.lock vendor/engine/Cargo.lock && cargo fetch --manifest-path vendor/engine/Cargo.toml --target "$(rustc -vV | sed -n 's/^host: //p')" && chown -R 10001:10001 /build /usr/local/cargo
 USER 10001:10001
-RUN cargo test --manifest-path vendor/engine/Cargo.toml --locked --offline -p code-system-graph-store-sqlite && cargo clippy --manifest-path vendor/engine/Cargo.toml --locked --offline --all-targets -p code-system-graph-store-sqlite -- -D warnings && cargo metadata --manifest-path vendor/engine/Cargo.toml --locked --offline --format-version 1 > /build/store-metadata.json
+RUN cargo test --manifest-path vendor/engine/Cargo.toml --locked --offline -p code-system-graph-store-sqlite && cargo clippy --manifest-path vendor/engine/Cargo.toml --locked --offline --all-targets -p code-system-graph-store-sqlite -- -D warnings && cargo metadata --manifest-path vendor/engine/Cargo.toml --locked --offline --format-version 1 --filter-platform "$(rustc -vV | sed -n 's/^host: //p')" > /build/store-metadata.json
 FROM node:24.22.2-trixie-slim@sha256:54f84b4cf8432b21aaffd5d3ce8d41e12cea0d10d33c09d2f3c9879d49d6b446 AS nodebuild
 WORKDIR /app
 COPY package.json package-lock.json tsconfig.json ./
