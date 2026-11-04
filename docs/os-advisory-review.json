@@ -2322,5 +2322,8 @@
       "prior offline assembly profile metadata omitted by Docker generator"
     ],
     "rationale": "All recorded runtime binary bytes and constrained source/entrypoints are identical. Rebind the existing applicability decisions to the Docker-generated manifest; no advisory disposition or guard is relaxed."
-  }
+  },
+  "runtime_fingerprint_version": "manifest-v1-without-volatile-link-map",
+  "runtime_security_fingerprint_sha256": "552f9ce5c2c48b5d26a3e16206a7eec90b777255f3425c2cba5574c30ea0be01",
+  "fingerprint_scope": "Includes all runtime binary hashes, packages, Node versions, linkage and native evidence except the recorded link-map digest, which includes random temporary linker object paths. The full artifact-specific manifest hash and link-map digest remain recorded. Missing or malformed link-map evidence is rejected."
 }

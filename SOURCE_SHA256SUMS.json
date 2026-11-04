@@ -2,7 +2,7 @@
   ".cargo/config.toml": "b108f2392506a56f2f2dcc96e46b5b978ba25a3863045de88386a62594271c7a",
   ".dockerignore": "24f3adde0663a0cca41d36f6756b83aadc2f43c8fe68ec7db1e9a523916446c6",
   ".github/workflows/arm64.yml": "a84932e72706ffb1b5e74d4deef0fc42db91447ed673ecc64cf24d1b834c23f9",
-  ".github/workflows/ci.yml": "fc54e6ddcd79f9e596020b1bc9bb9e780c0a83cefc44018fb879e765c45bf920",
+  ".github/workflows/ci.yml": "59b8c6350b2a2a8bc616c66353b99a3c4fb9c940692988e696d376a3c1fe8f2e",
   ".gitignore": "e56ed80bd0bf2ff2b9da2d1a43fbcdd1507799901afa6a2cbfb2fe84c283de9e",
   ".node-version": "9b6daf95eb68172757ba00a070df72151945c38436d060621fde0b1208d16284",
   "CONTRIBUTING.md": "40a6bed2540e802a2f1329bbdc63ce8273d87a3eaa74c00e7bcbb0012772eaf2",
@@ -22,7 +22,7 @@
   "docs/license-inventory.md": "3b1265a6188750e5525b068918f3f25c3ab4dc5736946aff8ec8f5ce0af01eb7",
   "docs/os-advisory-final.json": "7ce7dbbaf4598a28edd1f7dc33ee3cd79b59d6bdf17461469bcdb8ca68cf809a",
   "docs/os-advisory-final.md": "df9a9d63e732e10c528952931f12845f7a5db48c669eaa5075c39c8b35f43fcd",
-  "docs/os-advisory-review.json": "25568cba0f5ad6799e9a620d699e96d539635a35be2a9bd4082a4817c86ebfa1",
+  "docs/os-advisory-review.json": "dde4a51d86e60fd44f5c8c2d60dca6bcd658f9e4bd6701954e01dca9fec0409f",
   "docs/os-advisory-review.md": "ece4efb429765a9d3c930e970e5752eec445bb7bd56ae3d3e7c1649c1bd6db3a",
   "docs/performance-scale.md": "eb1038f72e7197506cc0e5f9ec3847782c4f0bc907d41889a88bc3ff735de82a",
   "docs/private-reporting.md": "d56529e5daa585ccd5f4193119119dc2fcb04fe8654303bd773d318ec8f8faf9",
@@ -716,7 +716,7 @@
   "rust-toolchain.toml": "d8c420f9c9a2fc00c09cf07b7bb570c92a09137ef1559cb9ef5b12c76f7557cc",
   "scripts/check_distribution.py": "edbc2023303a8b5846f8ff67a502f5ed15171c279cd9e0597e0ce15efeb85059",
   "scripts/check_licenses.py": "be4868a06b098640f0117967ca77d1b37df2832b17aac20aa72095bde638d6dc",
-  "scripts/check_vulnerabilities.py": "cd44f1be6d0592f1d6853d42fab09bc908afb5ae93fadbdfdb7c748888ccc72d",
+  "scripts/check_vulnerabilities.py": "2acfbf64ff9449e47e6a6e19fe785e29b4ccae164873bea4f815b03743a899c6",
   "scripts/container_inventory.mjs": "dcf4a9bd35e6790ca518bc9ef10e47064d55db586f95cb8d4d22f802bc66261b",
   "scripts/demo.mjs": "f6c41e5454f17a810d56359d208f38f6fb7c2d548c52a6283f588f0e3ecfdc4c",
   "scripts/distribution/build-rootfs.mjs": "3ea66f5101a23be22a29b16038843a67493f4d5c5cb42394353cb2a79596ac66",
@@ -936,5 +936,6 @@
   "vendor/engine/README.md": "61cc26a3ddbe5977aee02a55df96658be18cc02a6b9ea3d22d43e14dc89e6d6c",
   "vendor/engine/THIRD_PARTY_NOTICES.md": "44bfdb17fe4428d8469d31e337b4924cc23641f1b43de2d4b6e7d115087d1e0b",
   "VENDOR.md": "fd08f5a7ea94cc1b75806e1fabdb24e49f02a13d12aad817bddd64cd2bf25652",
-  ".gitattributes": "c9b2523783c504bf998ea839364a514bb7eaa27161894d4f428180499d71cf37"
+  ".gitattributes": "c9b2523783c504bf998ea839364a514bb7eaa27161894d4f428180499d71cf37",
+  "tests/test_release_evidence.py": "1ce5229190b2f576cff984f5dfe144bf0e5bc02f52661a892744b98359d5b18b"
 }
