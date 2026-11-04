@@ -1,7 +1,7 @@
 {
   "review_date": "2026-11-04",
   "review_before": "2026-11-11",
-  "runtime_manifest_sha256": "85c64603dc53024092fa2b76088b349133ef5f12ef7a684c847455a048b74a13",
+  "runtime_manifest_sha256": "30db3163864580ac6d297d7e66ac1d517d2bc6d95a34e1c43c4763676badfe0e",
   "old_raw_severity_counts": {
     "critical": 1,
     "high": 17,
@@ -2308,5 +2308,19 @@
     "prior_runtime_manifest_sha256": "be0e7a5a970924d11df1df565a4fdaf9b1ac73cf9d7c38c5b1ca0e3b3be8c3e7",
     "basis": "Exact Node/OS runtime bytes unchanged; no added native undefined imports; runtime TypeScript unchanged; optional unused HCL parser excluded; all readonly/auth/privacy controls maintained",
     "limitations": "Only this exact Linux AMD64 default artifact and unchanged deployment conditions; HCL-enabled/native ARM64/MSVC are not covered"
+  },
+  "manifest_rebinding": {
+    "review_date": "2026-11-04",
+    "previous_manifest_sha256": "85c64603dc53024092fa2b76088b349133ef5f12ef7a684c847455a048b74a13",
+    "runtime_binary_file_count": 15,
+    "runtime_binary_hashes_unchanged": true,
+    "node_os_versions_and_packages_unchanged": true,
+    "undefined_imports_and_linkage_unchanged": true,
+    "runtime_source_unchanged": true,
+    "changed_evidence": [
+      "link-map hash from rebuilt container",
+      "prior offline assembly profile metadata omitted by Docker generator"
+    ],
+    "rationale": "All recorded runtime binary bytes and constrained source/entrypoints are identical. Rebind the existing applicability decisions to the Docker-generated manifest; no advisory disposition or guard is relaxed."
   }
 }

@@ -1,0 +1,2 @@
+# Preserve audited source, SQL and license bytes on every checkout.
+* -text

@@ -22,7 +22,7 @@
   "docs/license-inventory.md": "3b1265a6188750e5525b068918f3f25c3ab4dc5736946aff8ec8f5ce0af01eb7",
   "docs/os-advisory-final.json": "7ce7dbbaf4598a28edd1f7dc33ee3cd79b59d6bdf17461469bcdb8ca68cf809a",
   "docs/os-advisory-final.md": "df9a9d63e732e10c528952931f12845f7a5db48c669eaa5075c39c8b35f43fcd",
-  "docs/os-advisory-review.json": "f4b8635d0030a6a8ece58a65daf691210d470180899d8ed54a59b633f9061ec6",
+  "docs/os-advisory-review.json": "25568cba0f5ad6799e9a620d699e96d539635a35be2a9bd4082a4817c86ebfa1",
   "docs/os-advisory-review.md": "ece4efb429765a9d3c930e970e5752eec445bb7bd56ae3d3e7c1649c1bd6db3a",
   "docs/performance-scale.md": "eb1038f72e7197506cc0e5f9ec3847782c4f0bc907d41889a88bc3ff735de82a",
   "docs/private-reporting.md": "d56529e5daa585ccd5f4193119119dc2fcb04fe8654303bd773d318ec8f8faf9",
@@ -935,5 +935,6 @@
   "vendor/engine/NOTICE": "e5f96a1816e9d553bb7fb34b2d8e90c31a0c8f040339e83bd658c7ccd7e56ad0",
   "vendor/engine/README.md": "61cc26a3ddbe5977aee02a55df96658be18cc02a6b9ea3d22d43e14dc89e6d6c",
   "vendor/engine/THIRD_PARTY_NOTICES.md": "44bfdb17fe4428d8469d31e337b4924cc23641f1b43de2d4b6e7d115087d1e0b",
-  "VENDOR.md": "fd08f5a7ea94cc1b75806e1fabdb24e49f02a13d12aad817bddd64cd2bf25652"
+  "VENDOR.md": "fd08f5a7ea94cc1b75806e1fabdb24e49f02a13d12aad817bddd64cd2bf25652",
+  ".gitattributes": "c9b2523783c504bf998ea839364a514bb7eaa27161894d4f428180499d71cf37"
 }
