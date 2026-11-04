@@ -1,0 +1,183 @@
+{
+  "review": "2026-11-03",
+  "six_previous_blockers": [
+    {
+      "id": "DEBIAN-CVE-2019-1010022",
+      "component": "glibc / libc6",
+      "installed_version": "2.41-12+deb13u4",
+      "raw_severity": "critical",
+      "runtime_present": true,
+      "origin": "final scratch dynamic ELF closure; Node templates separately inspected",
+      "linkage": "dynamic libc",
+      "attacker_inputs": [
+        "bounded MCP JSON",
+        "readonly graph projection; no repository code execution"
+      ],
+      "upstream_fix": "No upstream fix; hardening enhancement remains unconfirmed",
+      "update_feasibility": "No unsupported sid-library swap performed; evaluated exact supported image instead",
+      "mitigation": "Upstream bug 22850 comment 3 explicitly identifies post-attack mitigation hardening, not an independently triggerable security defect. TCB/canary design exists on x86_64; no patch/removal is claimed. Triggering this chain first requires an independent stack overwrite, which this finding does not provide. Debian urgency unimportant agrees with upstream. Raw scanner Critical is retained; standalone Critical blocker count differs from raw CVSS.",
+      "residual_risk": "If a separate stack-corruption vulnerability is found, assess the mitigation-bypass chain anew; not a claim that memory-corruption bugs are impossible.",
+      "disposition": "NOT AFFECTED",
+      "sources": [
+        "https://sourceware.org/bugzilla/rest/bug/22850/comment",
+        "https://security-tracker.debian.org/tracker/CVE-2019-1010022"
+      ]
+    },
+    {
+      "id": "DEBIAN-CVE-2026-95619",
+      "component": "gcc-14 / libstdc++6 / libgcc-s1",
+      "installed_version": "14.2.0-19",
+      "raw_severity": "high",
+      "runtime_present": true,
+      "origin": "final scratch dynamic ELF closure; Node templates separately inspected",
+      "linkage": "dynamic libstdc++/libgcc; header code must be instantiated in Node",
+      "attacker_inputs": [
+        "bounded MCP JSON",
+        "readonly graph projection; no repository code execution"
+      ],
+      "upstream_fix": "gcc-14 14.4.0-3 (forky/sid); gcc-15 15.3.0-5; no fixed trixie package listed",
+      "update_feasibility": "No unsupported sid-library swap performed; evaluated exact supported image instead",
+      "mitigation": "GCC patch 200183d4 explicitly excludes POSIX memalign path. Exact Debian runtime library on Linux AMD64 rejects 24 SIZE_MAX-near allocations under 64 MiB/CPU/PID limits; no payload memory accessed. Node imports aligned new but presence alone is not vulnerable C11/fallback rounding. Disassembly/symbol/source evidence is retained.",
+      "residual_risk": "Do not extend to Wine, non-POSIX aligned_alloc fallback or another architecture/library build; rerun artifact check after image update.",
+      "disposition": "NOT AFFECTED",
+      "sources": [
+        "https://github.com/gcc-mirror/gcc/commit/200183d4ab5d57575f3dfebc6af3baf649910b9e",
+        "https://security-tracker.debian.org/tracker/CVE-2026-95619"
+      ]
+    },
+    {
+      "id": "DEBIAN-CVE-2026-102010",
+      "component": "gcc-14 / libstdc++6 / libgcc-s1",
+      "installed_version": "14.2.0-19",
+      "raw_severity": "high",
+      "runtime_present": true,
+      "origin": "final scratch dynamic ELF closure; Node templates separately inspected",
+      "linkage": "dynamic libstdc++/libgcc; header code must be instantiated in Node",
+      "attacker_inputs": [
+        "bounded MCP JSON",
+        "readonly graph projection; no repository code execution"
+      ],
+      "upstream_fix": "gcc-14 14.4.0-3 (forky/sid); no fixed trixie package listed",
+      "update_feasibility": "No unsupported sid-library swap performed; evaluated exact supported image instead",
+      "mitigation": "Upstream fix changes only GNU PBDS header binary_heap erase_if. Exact Node 24.22.2 source has no PBDS use in runtime components; full unstripped Node symbol table has zero __gnu_pbds occurrences. Rust code is not C++ and cannot instantiate the header. No compiler/header/plugin/native-addon endpoint exists. Runtime libstdc++ source-package match alone does not include this instantiated algorithm.",
+      "residual_risk": "Reassess any new native addon, compiler/template use, Node build or runtime executable.",
+      "disposition": "NOT AFFECTED",
+      "sources": [
+        "https://github.com/gcc-mirror/gcc/commit/aaa8351f4d2e636f9680a1f0a8ebc2f0a60611e6",
+        "https://security-tracker.debian.org/tracker/CVE-2026-102010"
+      ]
+    },
+    {
+      "id": "DEBIAN-CVE-2026-114690",
+      "component": "gcc-14 / libstdc++6 / libgcc-s1",
+      "installed_version": "14.2.0-19",
+      "raw_severity": "medium",
+      "runtime_present": true,
+      "origin": "final scratch dynamic ELF closure; Node templates separately inspected",
+      "linkage": "dynamic libstdc++/libgcc; header code must be instantiated in Node",
+      "attacker_inputs": [
+        "bounded MCP JSON",
+        "readonly graph projection; no repository code execution"
+      ],
+      "upstream_fix": "Upstream main patch available; Debian gcc-14 trixie/forky/sid remains unfixed in current tracker",
+      "update_feasibility": "No unsupported sid-library swap performed; evaluated exact supported image instead",
+      "mitigation": "Patch changes GNU parallel-mode search header. Matching official Node source and full symbol table have no __gnu_parallel use; build files do not enable _GLIBCXX_PARALLEL. No libgomp/OpenMP dependency in ELF closure and no C++ execution endpoint. Rust lexical query is not GNU parallel std::search.",
+      "residual_risk": "New OpenMP/parallel-mode code or native plugins invalidate this assessment.",
+      "disposition": "NOT AFFECTED",
+      "sources": [
+        "https://github.com/gcc-mirror/gcc/commit/c1f32b67510f6f9998deadaef5090b6663adb979",
+        "https://security-tracker.debian.org/tracker/CVE-2026-114690"
+      ]
+    },
+    {
+      "id": "DEBIAN-CVE-2026-114691",
+      "component": "gcc-14 / libstdc++6 / libgcc-s1",
+      "installed_version": "14.2.0-19",
+      "raw_severity": "medium",
+      "runtime_present": true,
+      "origin": "final scratch dynamic ELF closure; Node templates separately inspected",
+      "linkage": "dynamic libstdc++/libgcc; header code must be instantiated in Node",
+      "attacker_inputs": [
+        "bounded MCP JSON",
+        "readonly graph projection; no repository code execution"
+      ],
+      "upstream_fix": "Upstream main patch available; no fixed Debian gcc-14 version listed",
+      "update_feasibility": "No unsupported sid-library swap performed; evaluated exact supported image instead",
+      "mitigation": "Header constructor overflow requires a size/range near SIZE_MAX. Matching Node source runtime vector<bool> uses: V8 wasm exported_tags sized by validated module tag count, and debug-only tracing nesting_stack push/pop. No remote JS/Wasm/module/compiler interface is exposed; MCP JSON is data only, body/output/node-count limits bound lengths. Wasm tag count is checked by consume_count against kV8MaxWasmTags=1,000,000 (also uint32_t), not size_t-near-maximum; debug push_back does not call the affected attacker-sized constructor. Full binary contains vector<bool> helper, so absence is NOT claimed.",
+      "residual_risk": "Adding eval/JS/Wasm execution, inspector access, native addons or attacker-selected native container sizes reopens review.",
+      "disposition": "NOT AFFECTED",
+      "sources": [
+        "https://github.com/gcc-mirror/gcc/commit/2fd8866591b5aea7098835f80ab7e176382175ae",
+        "https://nodejs.org/dist/v24.22.2/SHASUMS256.txt",
+        "https://security-tracker.debian.org/tracker/CVE-2026-114691"
+      ]
+    },
+    {
+      "id": "DEBIAN-CVE-2026-115455",
+      "component": "gcc-14 / libstdc++6 / libgcc-s1",
+      "installed_version": "14.2.0-19",
+      "raw_severity": "medium",
+      "runtime_present": true,
+      "origin": "final scratch dynamic ELF closure; Node templates separately inspected",
+      "linkage": "dynamic libstdc++/libgcc; header code must be instantiated in Node",
+      "attacker_inputs": [
+        "bounded MCP JSON",
+        "readonly graph projection; no repository code execution"
+      ],
+      "upstream_fix": "Upstream main patch available; no fixed Debian gcc-14 version listed",
+      "update_feasibility": "No unsupported sid-library swap performed; evaluated exact supported image instead",
+      "mitigation": "Patch fixes wide-character istream extraction into std::bitset. Node full symbols have no basic_istream<wchar_t> extraction; matching runtime source bitsets are bookkeeping/bit shifts/output, not wide-stream extraction. No C++ stream input endpoint or executable repository/graph contents. Header template must be instantiated by a caller; shared libstdc++ presence is insufficient.",
+      "residual_risk": "Recheck new wide-stream bitset use or native libraries; not a statement that all bitsets are absent.",
+      "disposition": "NOT AFFECTED",
+      "sources": [
+        "https://github.com/gcc-mirror/gcc/commit/5d419c69ce2e6b86d7da75f18736904885674219",
+        "https://security-tracker.debian.org/tracker/CVE-2026-115455"
+      ]
+    }
+  ],
+  "raw_counts": {
+    "critical": 1,
+    "high": 8,
+    "medium": 13,
+    "low": 2,
+    "unrated": 3
+  },
+  "standalone_security_blockers": 0,
+  "node_source_sha256": "8fe2ec1723bb9f8d0b683907c82708debbeda64af21cb2aa214c4241eed0a061",
+  "node_compiler_evidence": [
+    "GCC 8.5.0",
+    "GCC 12.2.1"
+  ],
+  "limitations": "contextual Linux AMD64 artifact review, not universal component immunity",
+  "artifact_evidence": {
+    "node_origin": {
+      "official_archive_url": "https://nodejs.org/dist/v24.22.2/node-v24.22.2-linux-x64.tar.xz",
+      "official_archive_SHA256": "48cc0e21e048790e54c0cf5749c2725005313d652651c40b7a21feb9697aaf75",
+      "node_binary_SHA256": "904a6d3484241d466989f9df9ba3aab822b1496191bdb28230eb491a55c32a52",
+      "matches_exact_runtime_ELF": true,
+      "source_archive_verified": true
+    },
+    "libstdcpp": {
+      "path": "/lib/x86_64-linux-gnu/libstdc++.so.6",
+      "sha256": "972bb2a18b71140dab0240f8a1f68ab3fb1d56bcd4c4f824a91b70888faf5a00"
+    },
+    "aligned_allocation_probe": {
+      "rejections": 24,
+      "memory_limit_MiB": 64,
+      "network": "none",
+      "payload_memory_accessed": false
+    },
+    "node_core_advisory_check": {
+      "source": "https://raw.githubusercontent.com/nodejs/security-wg/main/vuln/core/index.json",
+      "sourceSha256": "f828e1488a638b970e88cc3e9993d34a8fb1fc02bd5e160b8ced2df99016d217",
+      "version": "24.22.2",
+      "records": 204,
+      "coverage": "official Node core/bundled advisories; not a guarantee of completeness for every third-party upstream database"
+    },
+    "scope": {
+      "os": "Linux",
+      "architecture": "AMD64",
+      "eval_JS_Wasm_native_addons": false
+    }
+  }
+}

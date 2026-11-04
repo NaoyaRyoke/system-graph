@@ -1,0 +1,377 @@
+# Third-party distribution notices
+
+Public Beta default read-only host dependency closure. Preserve these notices and licenses/dependencies/. Terraform/HCL-enabled artifacts are excluded from distribution until their separate license blocker is resolved. Optional lockfile declarations are not bundled source. Node and OS native notices are retained separately.
+
+- cargo aho-corasick 1.1.5: Unlicense OR MIT; https://crates.io/crates/aho-corasick/1.1.5; license texts: licenses/dependencies/cargo/aho-corasick-1.1.5/COPYING, licenses/dependencies/cargo/aho-corasick-1.1.5/LICENSE-MIT
+- cargo android_system_properties 0.1.6: MIT OR Apache-2.0; https://crates.io/crates/android_system_properties/0.1.6; license texts: licenses/dependencies/cargo/android_system_properties-0.1.6/LICENSE-APACHE, licenses/dependencies/cargo/android_system_properties-0.1.6/LICENSE-MIT
+- cargo annotate-snippets 0.12.16: MIT OR Apache-2.0; https://crates.io/crates/annotate-snippets/0.12.16; license texts: licenses/dependencies/cargo/annotate-snippets-0.12.16/LICENSE-APACHE, licenses/dependencies/cargo/annotate-snippets-0.12.16/LICENSE-MIT
+- cargo anstyle 1.0.14: MIT OR Apache-2.0; https://crates.io/crates/anstyle/1.0.14; license texts: licenses/dependencies/cargo/anstyle-1.0.14/LICENSE-APACHE, licenses/dependencies/cargo/anstyle-1.0.14/LICENSE-MIT
+- cargo ar_archive_writer 0.5.3: Apache-2.0 WITH LLVM-exception; https://crates.io/crates/ar_archive_writer/0.5.3; license texts: licenses/dependencies/cargo/ar_archive_writer-0.5.3/LICENSE.txt
+- cargo arraydeque 0.5.1: MIT/Apache-2.0; https://crates.io/crates/arraydeque/0.5.1; license texts: licenses/dependencies/cargo/arraydeque-0.5.1/LICENSE
+- cargo arrayvec 0.7.8: MIT OR Apache-2.0; https://crates.io/crates/arrayvec/0.7.8; license texts: licenses/dependencies/cargo/arrayvec-0.7.8/LICENSE-APACHE, licenses/dependencies/cargo/arrayvec-0.7.8/LICENSE-MIT
+- cargo async-trait 0.1.92: MIT OR Apache-2.0; https://crates.io/crates/async-trait/0.1.92; license texts: licenses/dependencies/cargo/async-trait-0.1.92/LICENSE-APACHE, licenses/dependencies/cargo/async-trait-0.1.92/LICENSE-MIT
+- cargo atomic-waker 1.1.2: Apache-2.0 OR MIT; https://crates.io/crates/atomic-waker/1.1.2; license texts: licenses/dependencies/cargo/atomic-waker-1.1.2/LICENSE-APACHE, licenses/dependencies/cargo/atomic-waker-1.1.2/LICENSE-MIT, licenses/dependencies/cargo/atomic-waker-1.1.2/LICENSE-THIRD-PARTY
+- cargo atomic-write-file 0.3.1: BSD-3-Clause; https://crates.io/crates/atomic-write-file/0.3.1; license texts: licenses/dependencies/cargo/atomic-write-file-0.3.1/LICENSE.md
+- cargo autocfg 1.5.1: Apache-2.0 OR MIT; https://crates.io/crates/autocfg/1.5.1; license texts: licenses/dependencies/cargo/autocfg-1.5.1/LICENSE-APACHE, licenses/dependencies/cargo/autocfg-1.5.1/LICENSE-MIT
+- cargo aws-lc-rs 1.18.1: ISC AND (Apache-2.0 OR ISC); https://crates.io/crates/aws-lc-rs/1.18.1; license texts: licenses/dependencies/cargo/aws-lc-rs-1.18.1/LICENSE
+- cargo aws-lc-sys 0.45.0: ISC AND (Apache-2.0 OR ISC) AND Apache-2.0 AND MIT AND BSD-3-Clause AND (Apache-2.0 OR ISC OR MIT) AND (Apache-2.0 OR ISC OR MIT-0); https://crates.io/crates/aws-lc-sys/0.45.0; license texts: licenses/dependencies/cargo/aws-lc-sys-0.45.0/LICENSE, licenses/dependencies/cargo/aws-lc-sys-0.45.0/aws-lc/LICENSE, licenses/dependencies/cargo/aws-lc-sys-0.45.0/aws-lc/third_party/fiat/LICENSE
+- cargo base64 0.23.1: MIT OR Apache-2.0; https://crates.io/crates/base64/0.23.1; license texts: licenses/dependencies/cargo/base64-0.23.1/LICENSE-APACHE, licenses/dependencies/cargo/base64-0.23.1/LICENSE-MIT
+- cargo bitflags 2.13.2: MIT OR Apache-2.0; https://crates.io/crates/bitflags/2.13.2; license texts: licenses/dependencies/cargo/bitflags-2.13.2/LICENSE-APACHE, licenses/dependencies/cargo/bitflags-2.13.2/LICENSE-MIT
+- cargo blake3 1.8.7: CC0-1.0 OR Apache-2.0 OR Apache-2.0 WITH LLVM-exception; https://crates.io/crates/blake3/1.8.7; license texts: licenses/dependencies/cargo/blake3-1.8.7/LICENSE_A2, licenses/dependencies/cargo/blake3-1.8.7/LICENSE_A2LLVM, licenses/dependencies/cargo/blake3-1.8.7/LICENSE_CC0
+- cargo bstr 1.13.1: MIT OR Apache-2.0; https://crates.io/crates/bstr/1.13.1; license texts: licenses/dependencies/cargo/bstr-1.13.1/COPYING, licenses/dependencies/cargo/bstr-1.13.1/LICENSE-APACHE, licenses/dependencies/cargo/bstr-1.13.1/LICENSE-MIT
+- cargo bumpalo 3.20.3: MIT OR Apache-2.0; https://crates.io/crates/bumpalo/3.20.3; license texts: licenses/dependencies/cargo/bumpalo-3.20.3/LICENSE-APACHE, licenses/dependencies/cargo/bumpalo-3.20.3/LICENSE-MIT
+- cargo bytes 1.12.1: MIT; https://crates.io/crates/bytes/1.12.1; license texts: licenses/dependencies/cargo/bytes-1.12.1/LICENSE
+- cargo cc 1.5.1: MIT OR Apache-2.0; https://crates.io/crates/cc/1.5.1; license texts: licenses/dependencies/cargo/cc-1.5.1/LICENSE-APACHE, licenses/dependencies/cargo/cc-1.5.1/LICENSE-MIT
+- cargo cfg-if 1.0.5: MIT OR Apache-2.0; https://crates.io/crates/cfg-if/1.0.5; license texts: licenses/dependencies/cargo/cfg-if-1.0.5/LICENSE-APACHE, licenses/dependencies/cargo/cfg-if-1.0.5/LICENSE-MIT
+- cargo cfg_aliases 0.2.2: MIT; https://crates.io/crates/cfg_aliases/0.2.2; license texts: licenses/dependencies/cargo/cfg_aliases-0.2.2/LICENSE
+- cargo chacha20 0.10.2: MIT OR Apache-2.0; https://crates.io/crates/chacha20/0.10.2; license texts: licenses/dependencies/cargo/chacha20-0.10.2/LICENSE-APACHE, licenses/dependencies/cargo/chacha20-0.10.2/LICENSE-MIT
+- cargo chrono 0.4.45: MIT OR Apache-2.0; https://crates.io/crates/chrono/0.4.45; license texts: licenses/dependencies/cargo/chrono-0.4.45/LICENSE.txt
+- cargo cmake 0.1.58: MIT OR Apache-2.0; https://crates.io/crates/cmake/0.1.58; license texts: licenses/dependencies/cargo/cmake-0.1.58/LICENSE-APACHE, licenses/dependencies/cargo/cmake-0.1.58/LICENSE-MIT
+- cargo code-system-graph-core 1.2.1: Apache-2.0; https://github.com/dertin/code-system-graph/tree/d161502d8e6db606345f998574df10637591f9e8 (locally modified; see VENDOR.md); license texts: licenses/dependencies/cargo/code-system-graph-core-1.2.1/LICENSE, licenses/dependencies/cargo/code-system-graph-core-1.2.1/NOTICE
+- cargo code-system-graph-model 1.2.1: Apache-2.0; https://github.com/dertin/code-system-graph/tree/d161502d8e6db606345f998574df10637591f9e8 (locally modified; see VENDOR.md); license texts: licenses/dependencies/cargo/code-system-graph-model-1.2.1/LICENSE, licenses/dependencies/cargo/code-system-graph-model-1.2.1/NOTICE
+- cargo code-system-graph-store-sqlite 1.2.1: Apache-2.0; https://github.com/dertin/code-system-graph/tree/d161502d8e6db606345f998574df10637591f9e8 (locally modified; see VENDOR.md); license texts: licenses/dependencies/cargo/code-system-graph-store-sqlite-1.2.1/LICENSE, licenses/dependencies/cargo/code-system-graph-store-sqlite-1.2.1/NOTICE
+- cargo combine 4.6.8: MIT; https://crates.io/crates/combine/4.6.8; license texts: licenses/dependencies/cargo/combine-4.6.8/LICENSE
+- cargo constant_time_eq 0.4.2: CC0-1.0 OR MIT-0 OR Apache-2.0; https://crates.io/crates/constant_time_eq/0.4.2; license texts: licenses/dependencies/cargo/constant_time_eq-0.4.2/LICENSE-APACHE, licenses/dependencies/cargo/constant_time_eq-0.4.2/LICENSE-CC0, licenses/dependencies/cargo/constant_time_eq-0.4.2/LICENSE-MIT0
+- cargo core-foundation 0.10.1: MIT OR Apache-2.0; https://crates.io/crates/core-foundation/0.10.1; license texts: licenses/dependencies/cargo/core-foundation-0.10.1/LICENSE-APACHE, licenses/dependencies/cargo/core-foundation-0.10.1/LICENSE-MIT
+- cargo core-foundation-sys 0.8.7: MIT OR Apache-2.0; https://crates.io/crates/core-foundation-sys/0.8.7; license texts: licenses/dependencies/cargo/core-foundation-sys-0.8.7/LICENSE-APACHE, licenses/dependencies/cargo/core-foundation-sys-0.8.7/LICENSE-MIT
+- cargo core_detect 1.0.0: MIT/Apache-2.0; https://crates.io/crates/core_detect/1.0.0; license texts: licenses/dependencies/cargo/core_detect-1.0.0/LICENSE-APACHE, licenses/dependencies/cargo/core_detect-1.0.0/LICENSE-MIT
+- cargo cpufeatures 0.3.1: MIT OR Apache-2.0; https://crates.io/crates/cpufeatures/0.3.1; license texts: licenses/dependencies/cargo/cpufeatures-0.3.1/LICENSE-APACHE, licenses/dependencies/cargo/cpufeatures-0.3.1/LICENSE-MIT
+- cargo crossbeam-deque 0.8.8: MIT OR Apache-2.0; https://crates.io/crates/crossbeam-deque/0.8.8; license texts: licenses/dependencies/cargo/crossbeam-deque-0.8.8/LICENSE-APACHE, licenses/dependencies/cargo/crossbeam-deque-0.8.8/LICENSE-MIT
+- cargo crossbeam-epoch 0.9.21: MIT OR Apache-2.0; https://crates.io/crates/crossbeam-epoch/0.9.21; license texts: licenses/dependencies/cargo/crossbeam-epoch-0.9.21/LICENSE-APACHE, licenses/dependencies/cargo/crossbeam-epoch-0.9.21/LICENSE-MIT
+- cargo crossbeam-utils 0.8.23: MIT OR Apache-2.0; https://crates.io/crates/crossbeam-utils/0.8.23; license texts: licenses/dependencies/cargo/crossbeam-utils-0.8.23/LICENSE-APACHE, licenses/dependencies/cargo/crossbeam-utils-0.8.23/LICENSE-MIT
+- cargo displaydoc 0.2.7: MIT OR Apache-2.0; https://crates.io/crates/displaydoc/0.2.7; license texts: licenses/dependencies/cargo/displaydoc-0.2.7/LICENSE-APACHE, licenses/dependencies/cargo/displaydoc-0.2.7/LICENSE-MIT
+- cargo dunce 1.0.5: CC0-1.0 OR MIT-0 OR Apache-2.0; https://crates.io/crates/dunce/1.0.5; license texts: licenses/dependencies/cargo/dunce-1.0.5/LICENSE
+- cargo dyn-clone 1.0.20: MIT OR Apache-2.0; https://crates.io/crates/dyn-clone/1.0.20; license texts: licenses/dependencies/cargo/dyn-clone-1.0.20/LICENSE-APACHE, licenses/dependencies/cargo/dyn-clone-1.0.20/LICENSE-MIT
+- cargo encoding_rs 0.8.42: (Apache-2.0 OR MIT) AND BSD-3-Clause; https://crates.io/crates/encoding_rs/0.8.42; license texts: licenses/dependencies/cargo/encoding_rs-0.8.42/COPYRIGHT, licenses/dependencies/cargo/encoding_rs-0.8.42/LICENSE-APACHE, licenses/dependencies/cargo/encoding_rs-0.8.42/LICENSE-MIT, licenses/dependencies/cargo/encoding_rs-0.8.42/LICENSE-WHATWG
+- cargo encoding_rs_io 0.1.8: MIT OR Apache-2.0; https://crates.io/crates/encoding_rs_io/0.1.8; license texts: licenses/dependencies/cargo/encoding_rs_io-0.1.8/COPYING, licenses/dependencies/cargo/encoding_rs_io-0.1.8/LICENSE-APACHE, licenses/dependencies/cargo/encoding_rs_io-0.1.8/LICENSE-MIT
+- cargo equivalent 1.0.2: Apache-2.0 OR MIT; https://crates.io/crates/equivalent/1.0.2; license texts: licenses/dependencies/cargo/equivalent-1.0.2/LICENSE-APACHE, licenses/dependencies/cargo/equivalent-1.0.2/LICENSE-MIT
+- cargo errno 0.3.14: MIT OR Apache-2.0; https://crates.io/crates/errno/0.3.14; license texts: licenses/dependencies/cargo/errno-0.3.14/LICENSE-APACHE, licenses/dependencies/cargo/errno-0.3.14/LICENSE-MIT
+- cargo fallible-iterator 0.3.0: MIT/Apache-2.0; https://crates.io/crates/fallible-iterator/0.3.0; license texts: licenses/dependencies/cargo/fallible-iterator-0.3.0/LICENSE-APACHE, licenses/dependencies/cargo/fallible-iterator-0.3.0/LICENSE-MIT
+- cargo fallible-streaming-iterator 0.1.9: MIT/Apache-2.0; https://crates.io/crates/fallible-streaming-iterator/0.1.9; license texts: licenses/dependencies/cargo/fallible-streaming-iterator-0.1.9/LICENSE-APACHE, licenses/dependencies/cargo/fallible-streaming-iterator-0.1.9/LICENSE-MIT
+- cargo fastrand 2.5.0: Apache-2.0 OR MIT; https://crates.io/crates/fastrand/2.5.0; license texts: licenses/dependencies/cargo/fastrand-2.5.0/LICENSE-APACHE, licenses/dependencies/cargo/fastrand-2.5.0/LICENSE-MIT
+- cargo find-msvc-tools 0.1.14: MIT OR Apache-2.0; https://crates.io/crates/find-msvc-tools/0.1.14; license texts: licenses/dependencies/cargo/find-msvc-tools-0.1.14/LICENSE-APACHE, licenses/dependencies/cargo/find-msvc-tools-0.1.14/LICENSE-MIT
+- cargo foldhash 0.2.0: Zlib; https://crates.io/crates/foldhash/0.2.0; license texts: licenses/dependencies/cargo/foldhash-0.2.0/LICENSE
+- cargo form_urlencoded 1.2.2: MIT OR Apache-2.0; https://crates.io/crates/form_urlencoded/1.2.2; license texts: licenses/dependencies/cargo/form_urlencoded-1.2.2/LICENSE-APACHE, licenses/dependencies/cargo/form_urlencoded-1.2.2/LICENSE-MIT
+- cargo fs_extra 1.3.0: MIT; https://crates.io/crates/fs_extra/1.3.0; license texts: licenses/dependencies/cargo/fs_extra-1.3.0/LICENSE
+- cargo futures 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures/0.3.34; license texts: licenses/dependencies/cargo/futures-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-0.3.34/LICENSE-MIT
+- cargo futures-channel 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-channel/0.3.34; license texts: licenses/dependencies/cargo/futures-channel-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-channel-0.3.34/LICENSE-MIT
+- cargo futures-core 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-core/0.3.34; license texts: licenses/dependencies/cargo/futures-core-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-core-0.3.34/LICENSE-MIT
+- cargo futures-executor 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-executor/0.3.34; license texts: licenses/dependencies/cargo/futures-executor-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-executor-0.3.34/LICENSE-MIT
+- cargo futures-io 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-io/0.3.34; license texts: licenses/dependencies/cargo/futures-io-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-io-0.3.34/LICENSE-MIT
+- cargo futures-macro 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-macro/0.3.34; license texts: licenses/dependencies/cargo/futures-macro-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-macro-0.3.34/LICENSE-MIT
+- cargo futures-sink 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-sink/0.3.34; license texts: licenses/dependencies/cargo/futures-sink-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-sink-0.3.34/LICENSE-MIT
+- cargo futures-task 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-task/0.3.34; license texts: licenses/dependencies/cargo/futures-task-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-task-0.3.34/LICENSE-MIT
+- cargo futures-util 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/futures-util/0.3.34; license texts: licenses/dependencies/cargo/futures-util-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/futures-util-0.3.34/LICENSE-MIT
+- cargo getopts 0.2.24: MIT OR Apache-2.0; https://crates.io/crates/getopts/0.2.24; license texts: licenses/dependencies/cargo/getopts-0.2.24/LICENSE-APACHE, licenses/dependencies/cargo/getopts-0.2.24/LICENSE-MIT
+- cargo getrandom 0.2.17: MIT OR Apache-2.0; https://crates.io/crates/getrandom/0.2.17; license texts: licenses/dependencies/cargo/getrandom-0.2.17/LICENSE-APACHE, licenses/dependencies/cargo/getrandom-0.2.17/LICENSE-MIT
+- cargo getrandom 0.4.3: MIT OR Apache-2.0; https://crates.io/crates/getrandom/0.4.3; license texts: licenses/dependencies/cargo/getrandom-0.4.3/LICENSE-APACHE, licenses/dependencies/cargo/getrandom-0.4.3/LICENSE-MIT
+- cargo globset 0.4.20: Unlicense OR MIT; https://crates.io/crates/globset/0.4.20; license texts: licenses/dependencies/cargo/globset-0.4.20/COPYING, licenses/dependencies/cargo/globset-0.4.20/LICENSE-MIT
+- cargo granit-parser 1.3.0: MIT OR Apache-2.0; https://crates.io/crates/granit-parser/1.3.0; license texts: licenses/dependencies/cargo/granit-parser-1.3.0/LICENSE
+- cargo graphql-parser 0.4.1: MIT/Apache-2.0; https://crates.io/crates/graphql-parser/0.4.1; license texts: licenses/dependencies/cargo/graphql-parser-0.4.1/LICENSE-APACHE, licenses/dependencies/cargo/graphql-parser-0.4.1/LICENSE-MIT
+- cargo hashbrown 0.16.1: MIT OR Apache-2.0; https://crates.io/crates/hashbrown/0.16.1; license texts: licenses/dependencies/cargo/hashbrown-0.16.1/LICENSE-APACHE, licenses/dependencies/cargo/hashbrown-0.16.1/LICENSE-MIT
+- cargo hashbrown 0.17.1: MIT OR Apache-2.0; https://crates.io/crates/hashbrown/0.17.1; license texts: licenses/dependencies/cargo/hashbrown-0.17.1/LICENSE-APACHE, licenses/dependencies/cargo/hashbrown-0.17.1/LICENSE-MIT
+- cargo hashlink 0.12.2: MIT OR Apache-2.0; https://crates.io/crates/hashlink/0.12.2; license texts: licenses/dependencies/cargo/hashlink-0.12.2/LICENSE-APACHE, licenses/dependencies/cargo/hashlink-0.12.2/LICENSE-MIT
+- cargo http 1.5.0: MIT OR Apache-2.0; https://crates.io/crates/http/1.5.0; license texts: licenses/dependencies/cargo/http-1.5.0/LICENSE-APACHE, licenses/dependencies/cargo/http-1.5.0/LICENSE-MIT
+- cargo http-body 1.1.0: MIT; https://crates.io/crates/http-body/1.1.0; license texts: licenses/dependencies/cargo/http-body-1.1.0/LICENSE
+- cargo http-body-util 0.1.5: MIT; https://crates.io/crates/http-body-util/0.1.5; license texts: licenses/dependencies/cargo/http-body-util-0.1.5/LICENSE
+- cargo httparse 1.10.1: MIT OR Apache-2.0; https://crates.io/crates/httparse/1.10.1; license texts: licenses/dependencies/cargo/httparse-1.10.1/LICENSE-APACHE, licenses/dependencies/cargo/httparse-1.10.1/LICENSE-MIT
+- cargo hybrid-engine-host 0.1.0: Apache-2.0; This source archive: rust-host/; license texts: licenses/dependencies/cargo/hybrid-engine-host-0.1.0/LICENSE
+- cargo hyper 1.11.1: MIT; https://crates.io/crates/hyper/1.11.1; license texts: licenses/dependencies/cargo/hyper-1.11.1/LICENSE
+- cargo hyper-rustls 0.27.10: Apache-2.0 OR ISC OR MIT; https://crates.io/crates/hyper-rustls/0.27.10; license texts: licenses/dependencies/cargo/hyper-rustls-0.27.10/LICENSE-APACHE, licenses/dependencies/cargo/hyper-rustls-0.27.10/LICENSE-ISC, licenses/dependencies/cargo/hyper-rustls-0.27.10/LICENSE-MIT
+- cargo hyper-util 0.1.21: MIT; https://crates.io/crates/hyper-util/0.1.21; license texts: licenses/dependencies/cargo/hyper-util-0.1.21/LICENSE
+- cargo iana-time-zone 0.1.65: MIT OR Apache-2.0; https://crates.io/crates/iana-time-zone/0.1.65; license texts: licenses/dependencies/cargo/iana-time-zone-0.1.65/LICENSE-APACHE, licenses/dependencies/cargo/iana-time-zone-0.1.65/LICENSE-MIT
+- cargo iana-time-zone-haiku 0.1.2: MIT OR Apache-2.0; https://crates.io/crates/iana-time-zone-haiku/0.1.2; license texts: licenses/dependencies/cargo/iana-time-zone-haiku-0.1.2/LICENSE-APACHE, licenses/dependencies/cargo/iana-time-zone-haiku-0.1.2/LICENSE-MIT
+- cargo icu_collections 2.3.0: Unicode-3.0; https://crates.io/crates/icu_collections/2.3.0; license texts: licenses/dependencies/cargo/icu_collections-2.3.0/LICENSE
+- cargo icu_locale_core 2.3.0: Unicode-3.0; https://crates.io/crates/icu_locale_core/2.3.0; license texts: licenses/dependencies/cargo/icu_locale_core-2.3.0/LICENSE
+- cargo icu_normalizer 2.3.0: Unicode-3.0; https://crates.io/crates/icu_normalizer/2.3.0; license texts: licenses/dependencies/cargo/icu_normalizer-2.3.0/LICENSE
+- cargo icu_normalizer_data 2.3.0: Unicode-3.0; https://crates.io/crates/icu_normalizer_data/2.3.0; license texts: licenses/dependencies/cargo/icu_normalizer_data-2.3.0/LICENSE
+- cargo icu_properties 2.3.0: Unicode-3.0; https://crates.io/crates/icu_properties/2.3.0; license texts: licenses/dependencies/cargo/icu_properties-2.3.0/LICENSE
+- cargo icu_properties_data 2.3.0: Unicode-3.0; https://crates.io/crates/icu_properties_data/2.3.0; license texts: licenses/dependencies/cargo/icu_properties_data-2.3.0/LICENSE
+- cargo icu_provider 2.3.1: Unicode-3.0; https://crates.io/crates/icu_provider/2.3.1; license texts: licenses/dependencies/cargo/icu_provider-2.3.1/LICENSE
+- cargo idna 1.1.0: MIT OR Apache-2.0; https://crates.io/crates/idna/1.1.0; license texts: licenses/dependencies/cargo/idna-1.1.0/LICENSE-APACHE, licenses/dependencies/cargo/idna-1.1.0/LICENSE-MIT
+- cargo idna_adapter 1.2.2: Apache-2.0 OR MIT; https://crates.io/crates/idna_adapter/1.2.2; license texts: licenses/dependencies/cargo/idna_adapter-1.2.2/LICENSE-APACHE, licenses/dependencies/cargo/idna_adapter-1.2.2/LICENSE-MIT
+- cargo ignore 0.4.33: Unlicense OR MIT; https://crates.io/crates/ignore/0.4.33; license texts: licenses/dependencies/cargo/ignore-0.4.33/COPYING, licenses/dependencies/cargo/ignore-0.4.33/LICENSE-MIT
+- cargo indexmap 2.14.2: Apache-2.0 OR MIT; https://crates.io/crates/indexmap/2.14.2; license texts: licenses/dependencies/cargo/indexmap-2.14.2/LICENSE-APACHE, licenses/dependencies/cargo/indexmap-2.14.2/LICENSE-MIT
+- cargo ipnet 2.12.2: MIT OR Apache-2.0; https://crates.io/crates/ipnet/2.12.2; license texts: licenses/dependencies/cargo/ipnet-2.12.2/LICENSE-APACHE, licenses/dependencies/cargo/ipnet-2.12.2/LICENSE-MIT
+- cargo itoa 1.0.18: MIT OR Apache-2.0; https://crates.io/crates/itoa/1.0.18; license texts: licenses/dependencies/cargo/itoa-1.0.18/LICENSE-APACHE, licenses/dependencies/cargo/itoa-1.0.18/LICENSE-MIT
+- cargo jni 0.22.4: MIT OR Apache-2.0; https://crates.io/crates/jni/0.22.4; license texts: licenses/dependencies/cargo/jni-0.22.4/LICENSE-APACHE, licenses/dependencies/cargo/jni-0.22.4/LICENSE-MIT
+- cargo jni-macros 0.22.4: MIT OR Apache-2.0; https://crates.io/crates/jni-macros/0.22.4; license texts: licenses/dependencies/cargo/jni-macros-0.22.4/LICENSE-APACHE, licenses/dependencies/cargo/jni-macros-0.22.4/LICENSE-MIT
+- cargo jni-sys 0.4.1: MIT OR Apache-2.0; https://crates.io/crates/jni-sys/0.4.1; license texts: licenses/dependencies/cargo/jni-sys-0.4.1/LICENSE-APACHE, licenses/dependencies/cargo/jni-sys-0.4.1/LICENSE-MIT
+- cargo jni-sys-macros 0.4.1: MIT OR Apache-2.0; https://crates.io/crates/jni-sys-macros/0.4.1; license texts: licenses/dependencies/cargo/jni-sys-macros-0.4.1/LICENSE-APACHE, licenses/dependencies/cargo/jni-sys-macros-0.4.1/LICENSE-MIT
+- cargo jobserver 0.1.35: MIT OR Apache-2.0; https://crates.io/crates/jobserver/0.1.35; license texts: licenses/dependencies/cargo/jobserver-0.1.35/LICENSE-APACHE, licenses/dependencies/cargo/jobserver-0.1.35/LICENSE-MIT
+- cargo js-sys 0.3.106: MIT OR Apache-2.0; https://crates.io/crates/js-sys/0.3.106; license texts: licenses/dependencies/cargo/js-sys-0.3.106/LICENSE-APACHE, licenses/dependencies/cargo/js-sys-0.3.106/LICENSE-MIT
+- cargo libc 0.2.190: MIT OR Apache-2.0; https://crates.io/crates/libc/0.2.190; license texts: licenses/dependencies/cargo/libc-0.2.190/LICENSE-APACHE, licenses/dependencies/cargo/libc-0.2.190/LICENSE-MIT
+- cargo libsqlite3-sys 0.39.1: MIT; https://crates.io/crates/libsqlite3-sys/0.39.1; license texts: licenses/dependencies/cargo/libsqlite3-sys-0.39.1/LICENSE
+- cargo linux-raw-sys 0.12.1: Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT; https://crates.io/crates/linux-raw-sys/0.12.1; license texts: licenses/dependencies/cargo/linux-raw-sys-0.12.1/COPYRIGHT, licenses/dependencies/cargo/linux-raw-sys-0.12.1/LICENSE-APACHE, licenses/dependencies/cargo/linux-raw-sys-0.12.1/LICENSE-Apache-2.0_WITH_LLVM-exception, licenses/dependencies/cargo/linux-raw-sys-0.12.1/LICENSE-MIT
+- cargo litemap 0.8.3: Unicode-3.0; https://crates.io/crates/litemap/0.8.3; license texts: licenses/dependencies/cargo/litemap-0.8.3/LICENSE
+- cargo log 0.4.34: MIT OR Apache-2.0; https://crates.io/crates/log/0.4.34; license texts: licenses/dependencies/cargo/log-0.4.34/LICENSE-APACHE, licenses/dependencies/cargo/log-0.4.34/LICENSE-MIT
+- cargo lru-slab 0.1.3: MIT OR Apache-2.0 OR Zlib; https://crates.io/crates/lru-slab/0.1.3; license texts: licenses/dependencies/cargo/lru-slab-0.1.3/LICENSE-APACHE, licenses/dependencies/cargo/lru-slab-0.1.3/LICENSE-MIT, licenses/dependencies/cargo/lru-slab-0.1.3/LICENSE-ZLIB
+- cargo memchr 2.8.3: Unlicense OR MIT; https://crates.io/crates/memchr/2.8.3; license texts: licenses/dependencies/cargo/memchr-2.8.3/COPYING, licenses/dependencies/cargo/memchr-2.8.3/LICENSE-MIT
+- cargo mio 1.2.3: MIT; https://crates.io/crates/mio/1.2.3; license texts: licenses/dependencies/cargo/mio-1.2.3/LICENSE
+- cargo multiversion_no_op 1.0.0: Apache-2.0 OR MIT; https://crates.io/crates/multiversion_no_op/1.0.0; license texts: licenses/dependencies/cargo/multiversion_no_op-1.0.0/COPYRIGHT, licenses/dependencies/cargo/multiversion_no_op-1.0.0/LICENSE-APACHE, licenses/dependencies/cargo/multiversion_no_op-1.0.0/LICENSE-MIT
+- cargo nix 0.31.3: MIT; https://crates.io/crates/nix/0.31.3; license texts: licenses/dependencies/cargo/nix-0.31.3/LICENSE
+- cargo nohash-hasher 0.2.0: Apache-2.0 OR MIT; https://crates.io/crates/nohash-hasher/0.2.0; license texts: licenses/dependencies/cargo/nohash-hasher-0.2.0/LICENSE-APACHE, licenses/dependencies/cargo/nohash-hasher-0.2.0/LICENSE-MIT
+- cargo ntapi 0.4.3: Apache-2.0 OR MIT; https://crates.io/crates/ntapi/0.4.3; license texts: licenses/dependencies/cargo/ntapi-0.4.3/LICENSE-APACHE, licenses/dependencies/cargo/ntapi-0.4.3/LICENSE-MIT
+- cargo num-traits 0.2.19: MIT OR Apache-2.0; https://crates.io/crates/num-traits/0.2.19; license texts: licenses/dependencies/cargo/num-traits-0.2.19/LICENSE-APACHE, licenses/dependencies/cargo/num-traits-0.2.19/LICENSE-MIT
+- cargo objc2-core-foundation 0.3.2: Zlib OR Apache-2.0 OR MIT; https://crates.io/crates/objc2-core-foundation/0.3.2; license texts: licenses/dependencies/cargo/objc2-core-foundation-0.3.2/LICENSE.md
+- cargo objc2-io-kit 0.3.2: Zlib OR Apache-2.0 OR MIT; https://crates.io/crates/objc2-io-kit/0.3.2; license texts: licenses/dependencies/cargo/objc2-io-kit-0.3.2/LICENSE.md
+- cargo object 0.39.1: Apache-2.0 OR MIT; https://crates.io/crates/object/0.39.1; license texts: licenses/dependencies/cargo/object-0.39.1/LICENSE-APACHE, licenses/dependencies/cargo/object-0.39.1/LICENSE-MIT
+- cargo once_cell 1.21.4: MIT OR Apache-2.0; https://crates.io/crates/once_cell/1.21.4; license texts: licenses/dependencies/cargo/once_cell-1.21.4/LICENSE-APACHE, licenses/dependencies/cargo/once_cell-1.21.4/LICENSE-MIT
+- cargo openssl-probe 0.2.1: MIT OR Apache-2.0; https://crates.io/crates/openssl-probe/0.2.1; license texts: licenses/dependencies/cargo/openssl-probe-0.2.1/LICENSE-APACHE, licenses/dependencies/cargo/openssl-probe-0.2.1/LICENSE-MIT
+- cargo percent-encoding 2.3.2: MIT OR Apache-2.0; https://crates.io/crates/percent-encoding/2.3.2; license texts: licenses/dependencies/cargo/percent-encoding-2.3.2/LICENSE-APACHE, licenses/dependencies/cargo/percent-encoding-2.3.2/LICENSE-MIT
+- cargo pin-project-lite 0.2.17: Apache-2.0 OR MIT; https://crates.io/crates/pin-project-lite/0.2.17; license texts: licenses/dependencies/cargo/pin-project-lite-0.2.17/LICENSE-APACHE, licenses/dependencies/cargo/pin-project-lite-0.2.17/LICENSE-MIT
+- cargo pkg-config 0.3.34: MIT OR Apache-2.0; https://crates.io/crates/pkg-config/0.3.34; license texts: licenses/dependencies/cargo/pkg-config-0.3.34/LICENSE-APACHE, licenses/dependencies/cargo/pkg-config-0.3.34/LICENSE-MIT
+- cargo potential_utf 0.1.6: Unicode-3.0; https://crates.io/crates/potential_utf/0.1.6; license texts: licenses/dependencies/cargo/potential_utf-0.1.6/LICENSE
+- cargo proc-macro2 1.0.107: MIT OR Apache-2.0; https://crates.io/crates/proc-macro2/1.0.107; license texts: licenses/dependencies/cargo/proc-macro2-1.0.107/LICENSE-APACHE, licenses/dependencies/cargo/proc-macro2-1.0.107/LICENSE-MIT
+- cargo process-wrap 10.0.1: Apache-2.0 OR MIT; https://crates.io/crates/process-wrap/10.0.1; license texts: licenses/dependencies/cargo/process-wrap-10.0.1/COPYRIGHT, licenses/dependencies/cargo/process-wrap-10.0.1/LICENSE-APACHE, licenses/dependencies/cargo/process-wrap-10.0.1/LICENSE-MIT
+- cargo proto-parser 1.14.3: MIT; https://crates.io/crates/proto-parser/1.14.3; license texts: licenses/dependencies/cargo/proto-parser-1.14.3/LICENSE
+- cargo psm 0.1.32: MIT OR Apache-2.0; https://crates.io/crates/psm/0.1.32; license texts: licenses/dependencies/cargo/psm-0.1.32/LICENSE-APACHE, licenses/dependencies/cargo/psm-0.1.32/LICENSE-MIT
+- cargo pulldown-cmark 0.13.6: MIT; https://crates.io/crates/pulldown-cmark/0.13.6; license texts: licenses/dependencies/cargo/pulldown-cmark-0.13.6/LICENSE
+- cargo pulldown-cmark-escape 0.11.0: MIT; https://crates.io/crates/pulldown-cmark-escape/0.11.0; license texts: licenses/dependencies/cargo/pulldown-cmark-escape-0.11.0/LICENSE
+- cargo quinn 0.11.12: MIT OR Apache-2.0; https://crates.io/crates/quinn/0.11.12; license texts: licenses/dependencies/cargo/quinn-0.11.12/LICENSE-APACHE, licenses/dependencies/cargo/quinn-0.11.12/LICENSE-MIT
+- cargo quinn-proto 0.11.19: MIT OR Apache-2.0; https://crates.io/crates/quinn-proto/0.11.19; license texts: licenses/dependencies/cargo/quinn-proto-0.11.19/LICENSE-APACHE, licenses/dependencies/cargo/quinn-proto-0.11.19/LICENSE-MIT
+- cargo quinn-udp 0.5.16: MIT OR Apache-2.0; https://crates.io/crates/quinn-udp/0.5.16; license texts: licenses/dependencies/cargo/quinn-udp-0.5.16/LICENSE-APACHE, licenses/dependencies/cargo/quinn-udp-0.5.16/LICENSE-MIT
+- cargo quote 1.0.47: MIT OR Apache-2.0; https://crates.io/crates/quote/1.0.47; license texts: licenses/dependencies/cargo/quote-1.0.47/LICENSE-APACHE, licenses/dependencies/cargo/quote-1.0.47/LICENSE-MIT
+- cargo r-efi 6.0.0: MIT OR Apache-2.0 OR LGPL-2.1-or-later; https://crates.io/crates/r-efi/6.0.0; license texts: licenses/dependencies/cargo/r-efi-6.0.0/AUTHORS
+- cargo rand 0.10.3: MIT OR Apache-2.0; https://crates.io/crates/rand/0.10.3; license texts: licenses/dependencies/cargo/rand-0.10.3/COPYRIGHT, licenses/dependencies/cargo/rand-0.10.3/LICENSE-APACHE, licenses/dependencies/cargo/rand-0.10.3/LICENSE-MIT
+- cargo rand_core 0.10.1: MIT OR Apache-2.0; https://crates.io/crates/rand_core/0.10.1; license texts: licenses/dependencies/cargo/rand_core-0.10.1/COPYRIGHT, licenses/dependencies/cargo/rand_core-0.10.1/LICENSE-APACHE, licenses/dependencies/cargo/rand_core-0.10.1/LICENSE-MIT
+- cargo rand_pcg 0.10.2: MIT OR Apache-2.0; https://crates.io/crates/rand_pcg/0.10.2; license texts: licenses/dependencies/cargo/rand_pcg-0.10.2/COPYRIGHT, licenses/dependencies/cargo/rand_pcg-0.10.2/LICENSE-APACHE, licenses/dependencies/cargo/rand_pcg-0.10.2/LICENSE-MIT
+- cargo recursive 0.1.1: MIT; https://crates.io/crates/recursive/0.1.1; license texts: licenses/dependencies/cargo/recursive-0.1.1/LICENSE
+- cargo recursive-proc-macro-impl 0.1.1: MIT; https://crates.io/crates/recursive-proc-macro-impl/0.1.1; license texts: licenses/dependencies/cargo/recursive-proc-macro-impl-0.1.1/LICENSE
+- cargo ref-cast 1.0.27: MIT OR Apache-2.0; https://crates.io/crates/ref-cast/1.0.27; license texts: licenses/dependencies/cargo/ref-cast-1.0.27/LICENSE-APACHE, licenses/dependencies/cargo/ref-cast-1.0.27/LICENSE-MIT
+- cargo ref-cast-impl 1.0.27: MIT OR Apache-2.0; https://crates.io/crates/ref-cast-impl/1.0.27; license texts: licenses/dependencies/cargo/ref-cast-impl-1.0.27/LICENSE-APACHE, licenses/dependencies/cargo/ref-cast-impl-1.0.27/LICENSE-MIT
+- cargo regex 1.13.1: MIT OR Apache-2.0; https://crates.io/crates/regex/1.13.1; license texts: licenses/dependencies/cargo/regex-1.13.1/LICENSE-APACHE, licenses/dependencies/cargo/regex-1.13.1/LICENSE-MIT
+- cargo regex-automata 0.4.18: MIT OR Apache-2.0; https://crates.io/crates/regex-automata/0.4.18; license texts: licenses/dependencies/cargo/regex-automata-0.4.18/LICENSE-APACHE, licenses/dependencies/cargo/regex-automata-0.4.18/LICENSE-MIT
+- cargo regex-syntax 0.8.11: MIT OR Apache-2.0; https://crates.io/crates/regex-syntax/0.8.11; license texts: licenses/dependencies/cargo/regex-syntax-0.8.11/LICENSE-APACHE, licenses/dependencies/cargo/regex-syntax-0.8.11/LICENSE-MIT, licenses/dependencies/cargo/regex-syntax-0.8.11/src/unicode_tables/LICENSE-UNICODE
+- cargo reqwest 0.13.5: MIT OR Apache-2.0; https://crates.io/crates/reqwest/0.13.5; license texts: licenses/dependencies/cargo/reqwest-0.13.5/LICENSE-APACHE, licenses/dependencies/cargo/reqwest-0.13.5/LICENSE-MIT
+- cargo ring 0.17.14: Apache-2.0 AND ISC; https://crates.io/crates/ring/0.17.14; license texts: licenses/dependencies/cargo/ring-0.17.14/LICENSE, licenses/dependencies/cargo/ring-0.17.14/LICENSE-BoringSSL, licenses/dependencies/cargo/ring-0.17.14/LICENSE-other-bits, licenses/dependencies/cargo/ring-0.17.14/src/polyfill/once_cell/LICENSE-APACHE, licenses/dependencies/cargo/ring-0.17.14/src/polyfill/once_cell/LICENSE-MIT, licenses/dependencies/cargo/ring-0.17.14/third_party/fiat/LICENSE
+- cargo rmcp 3.5.0: Apache-2.0; https://crates.io/crates/rmcp/3.5.0; license texts: licenses/dependencies/cargo/rmcp-3.5.0/LICENSE
+- cargo rsqlite-vfs 0.1.1: MIT; https://crates.io/crates/rsqlite-vfs/0.1.1; license texts: licenses/dependencies/cargo/rsqlite-vfs-0.1.1/LICENSE
+- cargo rusqlite 0.41.1: MIT; https://crates.io/crates/rusqlite/0.41.1; license texts: licenses/dependencies/cargo/rusqlite-0.41.1/LICENSE
+- cargo rustc-hash 2.1.3: Apache-2.0 OR MIT; https://crates.io/crates/rustc-hash/2.1.3; license texts: licenses/dependencies/cargo/rustc-hash-2.1.3/LICENSE-APACHE, licenses/dependencies/cargo/rustc-hash-2.1.3/LICENSE-MIT
+- cargo rustc_version 0.4.1: MIT OR Apache-2.0; https://crates.io/crates/rustc_version/0.4.1; license texts: licenses/dependencies/cargo/rustc_version-0.4.1/LICENSE-APACHE, licenses/dependencies/cargo/rustc_version-0.4.1/LICENSE-MIT
+- cargo rustix 1.1.5: Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT; https://crates.io/crates/rustix/1.1.5; license texts: licenses/dependencies/cargo/rustix-1.1.5/COPYRIGHT, licenses/dependencies/cargo/rustix-1.1.5/LICENSE-APACHE, licenses/dependencies/cargo/rustix-1.1.5/LICENSE-Apache-2.0_WITH_LLVM-exception, licenses/dependencies/cargo/rustix-1.1.5/LICENSE-MIT
+- cargo rustls 0.23.46: Apache-2.0 OR ISC OR MIT; https://crates.io/crates/rustls/0.23.46; license texts: licenses/dependencies/cargo/rustls-0.23.46/LICENSE-APACHE, licenses/dependencies/cargo/rustls-0.23.46/LICENSE-ISC, licenses/dependencies/cargo/rustls-0.23.46/LICENSE-MIT
+- cargo rustls-native-certs 0.8.4: Apache-2.0 OR ISC OR MIT; https://crates.io/crates/rustls-native-certs/0.8.4; license texts: licenses/dependencies/cargo/rustls-native-certs-0.8.4/LICENSE, licenses/dependencies/cargo/rustls-native-certs-0.8.4/LICENSE-APACHE, licenses/dependencies/cargo/rustls-native-certs-0.8.4/LICENSE-ISC, licenses/dependencies/cargo/rustls-native-certs-0.8.4/LICENSE-MIT
+- cargo rustls-pki-types 1.15.1: MIT OR Apache-2.0; https://crates.io/crates/rustls-pki-types/1.15.1; license texts: licenses/dependencies/cargo/rustls-pki-types-1.15.1/LICENSE-APACHE, licenses/dependencies/cargo/rustls-pki-types-1.15.1/LICENSE-MIT
+- cargo rustls-platform-verifier 0.7.1: MIT OR Apache-2.0; https://crates.io/crates/rustls-platform-verifier/0.7.1; license texts: licenses/dependencies/cargo/rustls-platform-verifier-0.7.1/LICENSE-APACHE, licenses/dependencies/cargo/rustls-platform-verifier-0.7.1/LICENSE-MIT
+- cargo rustls-platform-verifier-android 0.2.0: MIT OR Apache-2.0; https://crates.io/crates/rustls-platform-verifier-android/0.2.0; license texts: licenses/dependencies/cargo/rustls-platform-verifier-android-0.2.0/LICENSE-APACHE, licenses/dependencies/cargo/rustls-platform-verifier-android-0.2.0/LICENSE-MIT, licenses/dependencies/cargo/rustls-platform-verifier-android-0.2.0/android-release-support/LICENSE-APACHE, licenses/dependencies/cargo/rustls-platform-verifier-android-0.2.0/android-release-support/LICENSE-MIT
+- cargo rustls-webpki 0.103.16: ISC; https://crates.io/crates/rustls-webpki/0.103.16; license texts: licenses/dependencies/cargo/rustls-webpki-0.103.16/LICENSE
+- cargo rustversion 1.0.23: MIT OR Apache-2.0; https://crates.io/crates/rustversion/1.0.23; license texts: licenses/dependencies/cargo/rustversion-1.0.23/LICENSE-APACHE, licenses/dependencies/cargo/rustversion-1.0.23/LICENSE-MIT
+- cargo same-file 1.0.6: Unlicense/MIT; https://crates.io/crates/same-file/1.0.6; license texts: licenses/dependencies/cargo/same-file-1.0.6/COPYING, licenses/dependencies/cargo/same-file-1.0.6/LICENSE-MIT
+- cargo schannel 0.1.29: MIT; https://crates.io/crates/schannel/0.1.29; license texts: licenses/dependencies/cargo/schannel-0.1.29/LICENSE.md
+- cargo schemars 1.2.2: MIT; https://crates.io/crates/schemars/1.2.2; license texts: licenses/dependencies/cargo/schemars-1.2.2/LICENSE
+- cargo schemars_derive 1.2.2: MIT; https://crates.io/crates/schemars_derive/1.2.2; license texts: licenses/dependencies/cargo/schemars_derive-1.2.2/LICENSE
+- cargo scopeguard 1.2.0: MIT OR Apache-2.0; https://crates.io/crates/scopeguard/1.2.0; license texts: licenses/dependencies/cargo/scopeguard-1.2.0/LICENSE-APACHE, licenses/dependencies/cargo/scopeguard-1.2.0/LICENSE-MIT
+- cargo security-framework 3.7.0: MIT OR Apache-2.0; https://crates.io/crates/security-framework/3.7.0; license texts: licenses/dependencies/cargo/security-framework-3.7.0/LICENSE-APACHE, licenses/dependencies/cargo/security-framework-3.7.0/LICENSE-MIT
+- cargo security-framework-sys 2.17.0: MIT OR Apache-2.0; https://crates.io/crates/security-framework-sys/2.17.0; license texts: licenses/dependencies/cargo/security-framework-sys-2.17.0/LICENSE-APACHE, licenses/dependencies/cargo/security-framework-sys-2.17.0/LICENSE-MIT
+- cargo semver 1.0.28: MIT OR Apache-2.0; https://crates.io/crates/semver/1.0.28; license texts: licenses/dependencies/cargo/semver-1.0.28/LICENSE-APACHE, licenses/dependencies/cargo/semver-1.0.28/LICENSE-MIT
+- cargo serde 1.0.229: MIT OR Apache-2.0; https://crates.io/crates/serde/1.0.229; license texts: licenses/dependencies/cargo/serde-1.0.229/LICENSE-APACHE, licenses/dependencies/cargo/serde-1.0.229/LICENSE-MIT
+- cargo serde-saphyr 1.3.0: MIT OR Apache-2.0; https://crates.io/crates/serde-saphyr/1.3.0; license texts: licenses/dependencies/cargo/serde-saphyr-1.3.0/LICENSE-APACHE, licenses/dependencies/cargo/serde-saphyr-1.3.0/LICENSE-MIT
+- cargo serde_core 1.0.229: MIT OR Apache-2.0; https://crates.io/crates/serde_core/1.0.229; license texts: licenses/dependencies/cargo/serde_core-1.0.229/LICENSE-APACHE, licenses/dependencies/cargo/serde_core-1.0.229/LICENSE-MIT
+- cargo serde_derive 1.0.229: MIT OR Apache-2.0; https://crates.io/crates/serde_derive/1.0.229; license texts: licenses/dependencies/cargo/serde_derive-1.0.229/LICENSE-APACHE, licenses/dependencies/cargo/serde_derive-1.0.229/LICENSE-MIT
+- cargo serde_derive_internals 0.30.0: MIT OR Apache-2.0; https://crates.io/crates/serde_derive_internals/0.30.0; license texts: licenses/dependencies/cargo/serde_derive_internals-0.30.0/LICENSE-APACHE, licenses/dependencies/cargo/serde_derive_internals-0.30.0/LICENSE-MIT
+- cargo serde_json 1.0.151: MIT OR Apache-2.0; https://crates.io/crates/serde_json/1.0.151; license texts: licenses/dependencies/cargo/serde_json-1.0.151/LICENSE-APACHE, licenses/dependencies/cargo/serde_json-1.0.151/LICENSE-MIT
+- cargo shlex 2.0.1: MIT OR Apache-2.0; https://crates.io/crates/shlex/2.0.1; license texts: licenses/dependencies/cargo/shlex-2.0.1/LICENSE-APACHE, licenses/dependencies/cargo/shlex-2.0.1/LICENSE-MIT
+- cargo signal-hook-registry 1.4.8: MIT OR Apache-2.0; https://crates.io/crates/signal-hook-registry/1.4.8; license texts: licenses/dependencies/cargo/signal-hook-registry-1.4.8/LICENSE-APACHE, licenses/dependencies/cargo/signal-hook-registry-1.4.8/LICENSE-MIT
+- cargo simd_cesu8 1.2.0: Apache-2.0 OR MIT; https://crates.io/crates/simd_cesu8/1.2.0; license texts: licenses/dependencies/cargo/simd_cesu8-1.2.0/LICENSE-APACHE, licenses/dependencies/cargo/simd_cesu8-1.2.0/LICENSE-MIT
+- cargo simdutf8 0.1.5: MIT OR Apache-2.0; https://crates.io/crates/simdutf8/0.1.5; license texts: licenses/dependencies/cargo/simdutf8-0.1.5/LICENSE-Apache, licenses/dependencies/cargo/simdutf8-0.1.5/LICENSE-MIT
+- cargo slab 0.4.12: MIT; https://crates.io/crates/slab/0.4.12; license texts: licenses/dependencies/cargo/slab-0.4.12/LICENSE
+- cargo smallvec 1.16.2: MIT OR Apache-2.0; https://crates.io/crates/smallvec/1.16.2; license texts: licenses/dependencies/cargo/smallvec-1.16.2/LICENSE-APACHE, licenses/dependencies/cargo/smallvec-1.16.2/LICENSE-MIT
+- cargo socket2 0.6.5: MIT OR Apache-2.0; https://crates.io/crates/socket2/0.6.5; license texts: licenses/dependencies/cargo/socket2-0.6.5/LICENSE-APACHE, licenses/dependencies/cargo/socket2-0.6.5/LICENSE-MIT
+- cargo sqlite-wasm-rs 0.5.5: MIT; https://crates.io/crates/sqlite-wasm-rs/0.5.5; license texts: licenses/dependencies/cargo/sqlite-wasm-rs-0.5.5/LICENSE
+- cargo sqlparser 0.63.0: Apache-2.0; https://crates.io/crates/sqlparser/0.63.0; license texts: licenses/dependencies/cargo/sqlparser-0.63.0/LICENSE.TXT
+- cargo stable_deref_trait 1.2.1: MIT OR Apache-2.0; https://crates.io/crates/stable_deref_trait/1.2.1; license texts: licenses/dependencies/cargo/stable_deref_trait-1.2.1/LICENSE-APACHE, licenses/dependencies/cargo/stable_deref_trait-1.2.1/LICENSE-MIT
+- cargo stacker 0.1.25: MIT OR Apache-2.0; https://crates.io/crates/stacker/0.1.25; license texts: licenses/dependencies/cargo/stacker-0.1.25/LICENSE-APACHE, licenses/dependencies/cargo/stacker-0.1.25/LICENSE-MIT
+- cargo streaming-iterator 0.1.9: MIT OR Apache-2.0; https://crates.io/crates/streaming-iterator/0.1.9; license texts: licenses/dependencies/cargo/streaming-iterator-0.1.9/LICENSE-APACHE, licenses/dependencies/cargo/streaming-iterator-0.1.9/LICENSE-MIT
+- cargo subtle 2.6.1: BSD-3-Clause; https://crates.io/crates/subtle/2.6.1; license texts: licenses/dependencies/cargo/subtle-2.6.1/LICENSE
+- cargo syn 2.0.119: MIT OR Apache-2.0; https://crates.io/crates/syn/2.0.119; license texts: licenses/dependencies/cargo/syn-2.0.119/LICENSE-APACHE, licenses/dependencies/cargo/syn-2.0.119/LICENSE-MIT
+- cargo syn 3.0.6: MIT OR Apache-2.0; https://crates.io/crates/syn/3.0.6; license texts: licenses/dependencies/cargo/syn-3.0.6/LICENSE-APACHE, licenses/dependencies/cargo/syn-3.0.6/LICENSE-MIT
+- cargo sync_wrapper 1.0.2: Apache-2.0; https://crates.io/crates/sync_wrapper/1.0.2; license texts: licenses/dependencies/cargo/sync_wrapper-1.0.2/LICENSE
+- cargo synstructure 0.14.0: MIT; https://crates.io/crates/synstructure/0.14.0; license texts: licenses/dependencies/cargo/synstructure-0.14.0/LICENSE
+- cargo sysinfo 0.39.6: MIT; https://crates.io/crates/sysinfo/0.39.6; license texts: licenses/dependencies/cargo/sysinfo-0.39.6/LICENSE
+- cargo tempfile 3.27.0: MIT OR Apache-2.0; https://crates.io/crates/tempfile/3.27.0; license texts: licenses/dependencies/cargo/tempfile-3.27.0/LICENSE-APACHE, licenses/dependencies/cargo/tempfile-3.27.0/LICENSE-MIT
+- cargo thiserror 1.0.69: MIT OR Apache-2.0; https://crates.io/crates/thiserror/1.0.69; license texts: licenses/dependencies/cargo/thiserror-1.0.69/LICENSE-APACHE, licenses/dependencies/cargo/thiserror-1.0.69/LICENSE-MIT
+- cargo thiserror 2.0.21: MIT OR Apache-2.0; https://crates.io/crates/thiserror/2.0.21; license texts: licenses/dependencies/cargo/thiserror-2.0.21/LICENSE-APACHE, licenses/dependencies/cargo/thiserror-2.0.21/LICENSE-MIT
+- cargo thiserror-impl 1.0.69: MIT OR Apache-2.0; https://crates.io/crates/thiserror-impl/1.0.69; license texts: licenses/dependencies/cargo/thiserror-impl-1.0.69/LICENSE-APACHE, licenses/dependencies/cargo/thiserror-impl-1.0.69/LICENSE-MIT
+- cargo thiserror-impl 2.0.21: MIT OR Apache-2.0; https://crates.io/crates/thiserror-impl/2.0.21; license texts: licenses/dependencies/cargo/thiserror-impl-2.0.21/LICENSE-APACHE, licenses/dependencies/cargo/thiserror-impl-2.0.21/LICENSE-MIT
+- cargo tinystr 0.8.4: Unicode-3.0; https://crates.io/crates/tinystr/0.8.4; license texts: licenses/dependencies/cargo/tinystr-0.8.4/LICENSE
+- cargo tinyvec 1.13.3: Zlib OR Apache-2.0 OR MIT; https://crates.io/crates/tinyvec/1.13.3; license texts: licenses/dependencies/cargo/tinyvec-1.13.3/LICENSE-APACHE.md, licenses/dependencies/cargo/tinyvec-1.13.3/LICENSE-MIT.md, licenses/dependencies/cargo/tinyvec-1.13.3/LICENSE-ZLIB.md
+- cargo tokio 1.53.3: MIT; https://crates.io/crates/tokio/1.53.3; license texts: licenses/dependencies/cargo/tokio-1.53.3/LICENSE
+- cargo tokio-macros 2.7.2: MIT; https://crates.io/crates/tokio-macros/2.7.2; license texts: licenses/dependencies/cargo/tokio-macros-2.7.2/LICENSE
+- cargo tokio-rustls 0.26.6: MIT OR Apache-2.0; https://crates.io/crates/tokio-rustls/0.26.6; license texts: licenses/dependencies/cargo/tokio-rustls-0.26.6/LICENSE-APACHE, licenses/dependencies/cargo/tokio-rustls-0.26.6/LICENSE-MIT
+- cargo tokio-stream 0.1.19: MIT; https://crates.io/crates/tokio-stream/0.1.19; license texts: licenses/dependencies/cargo/tokio-stream-0.1.19/LICENSE
+- cargo tokio-util 0.7.19: MIT; https://crates.io/crates/tokio-util/0.7.19; license texts: licenses/dependencies/cargo/tokio-util-0.7.19/LICENSE
+- cargo tower 0.5.3: MIT; https://crates.io/crates/tower/0.5.3; license texts: licenses/dependencies/cargo/tower-0.5.3/LICENSE
+- cargo tower-http 0.6.11: MIT; https://crates.io/crates/tower-http/0.6.11; license texts: licenses/dependencies/cargo/tower-http-0.6.11/LICENSE
+- cargo tower-layer 0.3.3: MIT; https://crates.io/crates/tower-layer/0.3.3; license texts: licenses/dependencies/cargo/tower-layer-0.3.3/LICENSE
+- cargo tower-service 0.3.3: MIT; https://crates.io/crates/tower-service/0.3.3; license texts: licenses/dependencies/cargo/tower-service-0.3.3/LICENSE
+- cargo tracing 0.1.44: MIT; https://crates.io/crates/tracing/0.1.44; license texts: licenses/dependencies/cargo/tracing-0.1.44/LICENSE
+- cargo tracing-attributes 0.1.31: MIT; https://crates.io/crates/tracing-attributes/0.1.31; license texts: licenses/dependencies/cargo/tracing-attributes-0.1.31/LICENSE
+- cargo tracing-core 0.1.36: MIT; https://crates.io/crates/tracing-core/0.1.36; license texts: licenses/dependencies/cargo/tracing-core-0.1.36/LICENSE, licenses/dependencies/cargo/tracing-core-0.1.36/src/spin/LICENSE
+- cargo tree-sitter 0.27.0: MIT; https://crates.io/crates/tree-sitter/0.27.0; license texts: licenses/dependencies/cargo/tree-sitter-0.27.0/LICENSE, licenses/dependencies/cargo/tree-sitter-0.27.0/src/unicode/LICENSE, licenses/dependencies/cargo/tree-sitter-0.27.0/src/wasm-stdlib/libc/LICENSE
+- cargo tree-sitter-go 0.25.0: MIT; https://crates.io/crates/tree-sitter-go/0.25.0; license texts: licenses/dependencies/cargo/tree-sitter-go-0.25.0/LICENSE
+- cargo tree-sitter-java 0.23.5: MIT; https://crates.io/crates/tree-sitter-java/0.23.5; license texts: licenses/dependencies/cargo/tree-sitter-java-0.23.5/LICENSE
+- cargo tree-sitter-javascript 0.25.0: MIT; https://crates.io/crates/tree-sitter-javascript/0.25.0; license texts: licenses/dependencies/cargo/tree-sitter-javascript-0.25.0/LICENSE
+- cargo tree-sitter-language 0.1.8: MIT; https://crates.io/crates/tree-sitter-language/0.1.8; license texts: licenses/dependencies/cargo/tree-sitter-language-0.1.8/LICENSE
+- cargo tree-sitter-python 0.25.0: MIT; https://crates.io/crates/tree-sitter-python/0.25.0; license texts: licenses/dependencies/cargo/tree-sitter-python-0.25.0/LICENSE
+- cargo tree-sitter-rust 0.24.2: MIT; https://crates.io/crates/tree-sitter-rust/0.24.2; license texts: licenses/dependencies/cargo/tree-sitter-rust-0.24.2/LICENSE
+- cargo tree-sitter-typescript 0.23.2: MIT; https://crates.io/crates/tree-sitter-typescript/0.23.2; license texts: licenses/dependencies/cargo/tree-sitter-typescript-0.23.2/LICENSE
+- cargo try-lock 0.2.5: MIT; https://crates.io/crates/try-lock/0.2.5; license texts: licenses/dependencies/cargo/try-lock-0.2.5/LICENSE
+- cargo unicase 2.9.0: MIT OR Apache-2.0; https://crates.io/crates/unicase/2.9.0; license texts: licenses/dependencies/cargo/unicase-2.9.0/LICENSE-APACHE, licenses/dependencies/cargo/unicase-2.9.0/LICENSE-MIT
+- cargo unicode-ident 1.0.26: (MIT OR Apache-2.0) AND Unicode-3.0; https://crates.io/crates/unicode-ident/1.0.26; license texts: licenses/dependencies/cargo/unicode-ident-1.0.26/LICENSE-APACHE, licenses/dependencies/cargo/unicode-ident-1.0.26/LICENSE-MIT, licenses/dependencies/cargo/unicode-ident-1.0.26/LICENSE-UNICODE
+- cargo unicode-width 0.2.2: MIT OR Apache-2.0; https://crates.io/crates/unicode-width/0.2.2; license texts: licenses/dependencies/cargo/unicode-width-0.2.2/COPYRIGHT, licenses/dependencies/cargo/unicode-width-0.2.2/LICENSE-APACHE, licenses/dependencies/cargo/unicode-width-0.2.2/LICENSE-MIT
+- cargo untrusted 0.9.0: ISC; https://crates.io/crates/untrusted/0.9.0; license texts: licenses/dependencies/cargo/untrusted-0.9.0/LICENSE.txt
+- cargo url 2.5.8: MIT OR Apache-2.0; https://crates.io/crates/url/2.5.8; license texts: licenses/dependencies/cargo/url-2.5.8/LICENSE-APACHE, licenses/dependencies/cargo/url-2.5.8/LICENSE-MIT
+- cargo utf8_iter 1.0.4: Apache-2.0 OR MIT; https://crates.io/crates/utf8_iter/1.0.4; license texts: licenses/dependencies/cargo/utf8_iter-1.0.4/COPYRIGHT, licenses/dependencies/cargo/utf8_iter-1.0.4/LICENSE-APACHE, licenses/dependencies/cargo/utf8_iter-1.0.4/LICENSE-MIT
+- cargo vcpkg 0.2.15: MIT/Apache-2.0; https://crates.io/crates/vcpkg/0.2.15; license texts: licenses/dependencies/cargo/vcpkg-0.2.15/LICENSE-APACHE, licenses/dependencies/cargo/vcpkg-0.2.15/LICENSE-MIT
+- cargo walkdir 2.5.0: Unlicense/MIT; https://crates.io/crates/walkdir/2.5.0; license texts: licenses/dependencies/cargo/walkdir-2.5.0/COPYING, licenses/dependencies/cargo/walkdir-2.5.0/LICENSE-MIT
+- cargo want 0.3.1: MIT; https://crates.io/crates/want/0.3.1; license texts: licenses/dependencies/cargo/want-0.3.1/LICENSE
+- cargo wasi 0.11.1+wasi-snapshot-preview1: Apache-2.0 WITH LLVM-exception OR Apache-2.0 OR MIT; https://crates.io/crates/wasi/0.11.1+wasi-snapshot-preview1; license texts: licenses/dependencies/cargo/wasi-0.11.1+wasi-snapshot-preview1/LICENSE-APACHE, licenses/dependencies/cargo/wasi-0.11.1+wasi-snapshot-preview1/LICENSE-Apache-2.0_WITH_LLVM-exception, licenses/dependencies/cargo/wasi-0.11.1+wasi-snapshot-preview1/LICENSE-MIT
+- cargo wasm-bindgen 0.2.129: MIT OR Apache-2.0; https://crates.io/crates/wasm-bindgen/0.2.129; license texts: licenses/dependencies/cargo/wasm-bindgen-0.2.129/LICENSE-APACHE, licenses/dependencies/cargo/wasm-bindgen-0.2.129/LICENSE-MIT
+- cargo wasm-bindgen-futures 0.4.79: MIT OR Apache-2.0; https://crates.io/crates/wasm-bindgen-futures/0.4.79; license texts: licenses/dependencies/cargo/wasm-bindgen-futures-0.4.79/LICENSE-APACHE, licenses/dependencies/cargo/wasm-bindgen-futures-0.4.79/LICENSE-MIT
+- cargo wasm-bindgen-macro 0.2.129: MIT OR Apache-2.0; https://crates.io/crates/wasm-bindgen-macro/0.2.129; license texts: licenses/dependencies/cargo/wasm-bindgen-macro-0.2.129/LICENSE-APACHE, licenses/dependencies/cargo/wasm-bindgen-macro-0.2.129/LICENSE-MIT
+- cargo wasm-bindgen-macro-support 0.2.129: MIT OR Apache-2.0; https://crates.io/crates/wasm-bindgen-macro-support/0.2.129; license texts: licenses/dependencies/cargo/wasm-bindgen-macro-support-0.2.129/LICENSE-APACHE, licenses/dependencies/cargo/wasm-bindgen-macro-support-0.2.129/LICENSE-MIT
+- cargo wasm-bindgen-shared 0.2.129: MIT OR Apache-2.0; https://crates.io/crates/wasm-bindgen-shared/0.2.129; license texts: licenses/dependencies/cargo/wasm-bindgen-shared-0.2.129/LICENSE-APACHE, licenses/dependencies/cargo/wasm-bindgen-shared-0.2.129/LICENSE-MIT
+- cargo web-sys 0.3.106: MIT OR Apache-2.0; https://crates.io/crates/web-sys/0.3.106; license texts: licenses/dependencies/cargo/web-sys-0.3.106/LICENSE-APACHE, licenses/dependencies/cargo/web-sys-0.3.106/LICENSE-MIT
+- cargo web-time 1.1.0: MIT OR Apache-2.0; https://crates.io/crates/web-time/1.1.0; license texts: licenses/dependencies/cargo/web-time-1.1.0/LICENSE-APACHE, licenses/dependencies/cargo/web-time-1.1.0/LICENSE-MIT
+- cargo webpki-root-certs 1.0.10: CDLA-Permissive-2.0; https://crates.io/crates/webpki-root-certs/1.0.10; license texts: licenses/dependencies/cargo/webpki-root-certs-1.0.10/LICENSE
+- cargo which 8.0.6: MIT; https://crates.io/crates/which/8.0.6; license texts: licenses/dependencies/cargo/which-8.0.6/LICENSE.txt
+- cargo winapi 0.3.9: MIT/Apache-2.0; https://crates.io/crates/winapi/0.3.9; license texts: licenses/dependencies/cargo/winapi-0.3.9/LICENSE-APACHE, licenses/dependencies/cargo/winapi-0.3.9/LICENSE-MIT
+- cargo winapi-i686-pc-windows-gnu 0.4.0: MIT/Apache-2.0; https://crates.io/crates/winapi-i686-pc-windows-gnu/0.4.0; license texts: licenses/dependencies/cargo/winapi-i686-pc-windows-gnu-0.4.0/LICENSE-APACHE, licenses/dependencies/cargo/winapi-i686-pc-windows-gnu-0.4.0/LICENSE-MIT
+- cargo winapi-util 0.1.11: Unlicense OR MIT; https://crates.io/crates/winapi-util/0.1.11; license texts: licenses/dependencies/cargo/winapi-util-0.1.11/COPYING, licenses/dependencies/cargo/winapi-util-0.1.11/LICENSE-MIT
+- cargo winapi-x86_64-pc-windows-gnu 0.4.0: MIT/Apache-2.0; https://crates.io/crates/winapi-x86_64-pc-windows-gnu/0.4.0; license texts: licenses/dependencies/cargo/winapi-x86_64-pc-windows-gnu-0.4.0/LICENSE-APACHE, licenses/dependencies/cargo/winapi-x86_64-pc-windows-gnu-0.4.0/LICENSE-MIT
+- cargo windows 0.62.2: MIT OR Apache-2.0; https://crates.io/crates/windows/0.62.2; license texts: licenses/dependencies/cargo/windows-0.62.2/license-apache-2.0, licenses/dependencies/cargo/windows-0.62.2/license-mit
+- cargo windows-collections 0.3.2: MIT OR Apache-2.0; https://crates.io/crates/windows-collections/0.3.2; license texts: licenses/dependencies/cargo/windows-collections-0.3.2/license-apache-2.0, licenses/dependencies/cargo/windows-collections-0.3.2/license-mit
+- cargo windows-core 0.62.2: MIT OR Apache-2.0; https://crates.io/crates/windows-core/0.62.2; license texts: licenses/dependencies/cargo/windows-core-0.62.2/license-apache-2.0, licenses/dependencies/cargo/windows-core-0.62.2/license-mit
+- cargo windows-future 0.3.2: MIT OR Apache-2.0; https://crates.io/crates/windows-future/0.3.2; license texts: licenses/dependencies/cargo/windows-future-0.3.2/license-apache-2.0, licenses/dependencies/cargo/windows-future-0.3.2/license-mit
+- cargo windows-implement 0.60.2: MIT OR Apache-2.0; https://crates.io/crates/windows-implement/0.60.2; license texts: licenses/dependencies/cargo/windows-implement-0.60.2/license-apache-2.0, licenses/dependencies/cargo/windows-implement-0.60.2/license-mit
+- cargo windows-interface 0.59.3: MIT OR Apache-2.0; https://crates.io/crates/windows-interface/0.59.3; license texts: licenses/dependencies/cargo/windows-interface-0.59.3/license-apache-2.0, licenses/dependencies/cargo/windows-interface-0.59.3/license-mit
+- cargo windows-link 0.2.1: MIT OR Apache-2.0; https://crates.io/crates/windows-link/0.2.1; license texts: licenses/dependencies/cargo/windows-link-0.2.1/license-apache-2.0, licenses/dependencies/cargo/windows-link-0.2.1/license-mit
+- cargo windows-numerics 0.3.1: MIT OR Apache-2.0; https://crates.io/crates/windows-numerics/0.3.1; license texts: licenses/dependencies/cargo/windows-numerics-0.3.1/license-apache-2.0, licenses/dependencies/cargo/windows-numerics-0.3.1/license-mit
+- cargo windows-result 0.4.1: MIT OR Apache-2.0; https://crates.io/crates/windows-result/0.4.1; license texts: licenses/dependencies/cargo/windows-result-0.4.1/license-apache-2.0, licenses/dependencies/cargo/windows-result-0.4.1/license-mit
+- cargo windows-strings 0.5.1: MIT OR Apache-2.0; https://crates.io/crates/windows-strings/0.5.1; license texts: licenses/dependencies/cargo/windows-strings-0.5.1/license-apache-2.0, licenses/dependencies/cargo/windows-strings-0.5.1/license-mit
+- cargo windows-sys 0.52.0: MIT OR Apache-2.0; https://crates.io/crates/windows-sys/0.52.0; license texts: licenses/dependencies/cargo/windows-sys-0.52.0/license-apache-2.0, licenses/dependencies/cargo/windows-sys-0.52.0/license-mit
+- cargo windows-sys 0.61.2: MIT OR Apache-2.0; https://crates.io/crates/windows-sys/0.61.2; license texts: licenses/dependencies/cargo/windows-sys-0.61.2/license-apache-2.0, licenses/dependencies/cargo/windows-sys-0.61.2/license-mit
+- cargo windows-targets 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows-targets/0.52.6; license texts: licenses/dependencies/cargo/windows-targets-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows-targets-0.52.6/license-mit
+- cargo windows-threading 0.2.1: MIT OR Apache-2.0; https://crates.io/crates/windows-threading/0.2.1; license texts: licenses/dependencies/cargo/windows-threading-0.2.1/license-apache-2.0, licenses/dependencies/cargo/windows-threading-0.2.1/license-mit
+- cargo windows_aarch64_gnullvm 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_aarch64_gnullvm/0.52.6; license texts: licenses/dependencies/cargo/windows_aarch64_gnullvm-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_aarch64_gnullvm-0.52.6/license-mit
+- cargo windows_aarch64_msvc 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_aarch64_msvc/0.52.6; license texts: licenses/dependencies/cargo/windows_aarch64_msvc-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_aarch64_msvc-0.52.6/license-mit
+- cargo windows_i686_gnu 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_i686_gnu/0.52.6; license texts: licenses/dependencies/cargo/windows_i686_gnu-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_i686_gnu-0.52.6/license-mit
+- cargo windows_i686_gnullvm 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_i686_gnullvm/0.52.6; license texts: licenses/dependencies/cargo/windows_i686_gnullvm-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_i686_gnullvm-0.52.6/license-mit
+- cargo windows_i686_msvc 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_i686_msvc/0.52.6; license texts: licenses/dependencies/cargo/windows_i686_msvc-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_i686_msvc-0.52.6/license-mit
+- cargo windows_x86_64_gnu 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_x86_64_gnu/0.52.6; license texts: licenses/dependencies/cargo/windows_x86_64_gnu-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_x86_64_gnu-0.52.6/license-mit
+- cargo windows_x86_64_gnullvm 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_x86_64_gnullvm/0.52.6; license texts: licenses/dependencies/cargo/windows_x86_64_gnullvm-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_x86_64_gnullvm-0.52.6/license-mit
+- cargo windows_x86_64_msvc 0.52.6: MIT OR Apache-2.0; https://crates.io/crates/windows_x86_64_msvc/0.52.6; license texts: licenses/dependencies/cargo/windows_x86_64_msvc-0.52.6/license-apache-2.0, licenses/dependencies/cargo/windows_x86_64_msvc-0.52.6/license-mit
+- cargo writeable 0.6.4: Unicode-3.0; https://crates.io/crates/writeable/0.6.4; license texts: licenses/dependencies/cargo/writeable-0.6.4/LICENSE
+- cargo yoke 0.8.3: Unicode-3.0; https://crates.io/crates/yoke/0.8.3; license texts: licenses/dependencies/cargo/yoke-0.8.3/LICENSE
+- cargo yoke-derive 0.8.4: Unicode-3.0; https://crates.io/crates/yoke-derive/0.8.4; license texts: licenses/dependencies/cargo/yoke-derive-0.8.4/LICENSE
+- cargo zerofrom 0.1.8: Unicode-3.0; https://crates.io/crates/zerofrom/0.1.8; license texts: licenses/dependencies/cargo/zerofrom-0.1.8/LICENSE
+- cargo zerofrom-derive 0.1.8: Unicode-3.0; https://crates.io/crates/zerofrom-derive/0.1.8; license texts: licenses/dependencies/cargo/zerofrom-derive-0.1.8/LICENSE
+- cargo zeroize 1.9.0: Apache-2.0 OR MIT; https://crates.io/crates/zeroize/1.9.0; license texts: licenses/dependencies/cargo/zeroize-1.9.0/LICENSE-APACHE, licenses/dependencies/cargo/zeroize-1.9.0/LICENSE-MIT
+- cargo zerotrie 0.2.5: Unicode-3.0; https://crates.io/crates/zerotrie/0.2.5; license texts: licenses/dependencies/cargo/zerotrie-0.2.5/LICENSE
+- cargo zerovec 0.11.8: Unicode-3.0; https://crates.io/crates/zerovec/0.11.8; license texts: licenses/dependencies/cargo/zerovec-0.11.8/LICENSE
+- cargo zerovec-derive 0.11.6: Unicode-3.0; https://crates.io/crates/zerovec-derive/0.11.6; license texts: licenses/dependencies/cargo/zerovec-derive-0.11.6/LICENSE
+- cargo zmij 1.0.23: MIT; https://crates.io/crates/zmij/1.0.23; license texts: licenses/dependencies/cargo/zmij-1.0.23/LICENSE-MIT
+- npm @hono/node-server 2.1.6: MIT; https://www.npmjs.com/package/@hono/node-server/v/2.1.6; license texts: licenses/dependencies/npm/@hono__node-server-2.1.6/LICENSE
+- npm @modelcontextprotocol/client 2.4.0: Apache-2.0; https://www.npmjs.com/package/@modelcontextprotocol/client/v/2.4.0; license texts: licenses/dependencies/npm/@modelcontextprotocol__client-2.4.0/LICENSE
+- npm @modelcontextprotocol/core 2.4.0: Apache-2.0; https://www.npmjs.com/package/@modelcontextprotocol/core/v/2.4.0; license texts: licenses/dependencies/npm/@modelcontextprotocol__core-2.4.0/LICENSE
+- npm @modelcontextprotocol/node 2.1.2: Apache-2.0; https://www.npmjs.com/package/@modelcontextprotocol/node/v/2.1.2; license texts: licenses/dependencies/npm/@modelcontextprotocol__node-2.1.2/LICENSE
+- npm @modelcontextprotocol/sdk 1.32.2: MIT; https://www.npmjs.com/package/@modelcontextprotocol/sdk/v/1.32.2; license texts: licenses/dependencies/npm/@modelcontextprotocol__sdk-1.32.2/LICENSE
+- npm @modelcontextprotocol/server 2.4.0: Apache-2.0; https://www.npmjs.com/package/@modelcontextprotocol/server/v/2.4.0; license texts: licenses/dependencies/npm/@modelcontextprotocol__server-2.4.0/LICENSE
+- npm @types/node 22.20.1: MIT; https://www.npmjs.com/package/@types/node/v/22.20.1; license texts: licenses/dependencies/npm/@types__node-22.20.1/LICENSE
+- npm accepts 2.0.0: MIT; https://www.npmjs.com/package/accepts/v/2.0.0; license texts: licenses/dependencies/npm/accepts-2.0.0/LICENSE
+- npm ajv 8.20.0: MIT; https://www.npmjs.com/package/ajv/v/8.20.0; license texts: licenses/dependencies/npm/ajv-8.20.0/LICENSE
+- npm ajv-formats 3.0.1: MIT; https://www.npmjs.com/package/ajv-formats/v/3.0.1; license texts: licenses/dependencies/npm/ajv-formats-3.0.1/LICENSE
+- npm body-parser 2.4.0: MIT; https://www.npmjs.com/package/body-parser/v/2.4.0; license texts: licenses/dependencies/npm/body-parser-2.4.0/LICENSE
+- npm content-type 2.1.0: MIT; https://www.npmjs.com/package/content-type/v/2.1.0; license texts: licenses/dependencies/npm/content-type-2.1.0/LICENSE
+- npm bytes 3.1.2: MIT; https://www.npmjs.com/package/bytes/v/3.1.2; license texts: licenses/dependencies/npm/bytes-3.1.2/LICENSE
+- npm call-bind-apply-helpers 1.0.2: MIT; https://www.npmjs.com/package/call-bind-apply-helpers/v/1.0.2; license texts: licenses/dependencies/npm/call-bind-apply-helpers-1.0.2/LICENSE
+- npm call-bound 1.0.4: MIT; https://www.npmjs.com/package/call-bound/v/1.0.4; license texts: licenses/dependencies/npm/call-bound-1.0.4/LICENSE
+- npm content-disposition 2.0.1: MIT; https://www.npmjs.com/package/content-disposition/v/2.0.1; license texts: licenses/dependencies/npm/content-disposition-2.0.1/LICENSE
+- npm content-type 1.0.5: MIT; https://www.npmjs.com/package/content-type/v/1.0.5; license texts: licenses/dependencies/npm/content-type-1.0.5/LICENSE
+- npm cookie 0.7.2: MIT; https://www.npmjs.com/package/cookie/v/0.7.2; license texts: licenses/dependencies/npm/cookie-0.7.2/LICENSE
+- npm cookie-signature 1.2.2: MIT; https://www.npmjs.com/package/cookie-signature/v/1.2.2; license texts: licenses/dependencies/npm/cookie-signature-1.2.2/LICENSE
+- npm cors 2.8.6: MIT; https://www.npmjs.com/package/cors/v/2.8.6; license texts: licenses/dependencies/npm/cors-2.8.6/LICENSE
+- npm cross-spawn 7.0.6: MIT; https://www.npmjs.com/package/cross-spawn/v/7.0.6; license texts: licenses/dependencies/npm/cross-spawn-7.0.6/LICENSE
+- npm debug 4.4.3: MIT; https://www.npmjs.com/package/debug/v/4.4.3; license texts: licenses/dependencies/npm/debug-4.4.3/LICENSE
+- npm depd 2.0.0: MIT; https://www.npmjs.com/package/depd/v/2.0.0; license texts: licenses/dependencies/npm/depd-2.0.0/LICENSE
+- npm dunder-proto 1.0.1: MIT; https://www.npmjs.com/package/dunder-proto/v/1.0.1; license texts: licenses/dependencies/npm/dunder-proto-1.0.1/LICENSE
+- npm ee-first 1.1.1: MIT; https://www.npmjs.com/package/ee-first/v/1.1.1; license texts: licenses/dependencies/npm/ee-first-1.1.1/LICENSE
+- npm encodeurl 2.0.1: MIT; https://www.npmjs.com/package/encodeurl/v/2.0.1; license texts: licenses/dependencies/npm/encodeurl-2.0.1/LICENSE
+- npm es-define-property 1.0.1: MIT; https://www.npmjs.com/package/es-define-property/v/1.0.1; license texts: licenses/dependencies/npm/es-define-property-1.0.1/LICENSE
+- npm es-errors 1.3.0: MIT; https://www.npmjs.com/package/es-errors/v/1.3.0; license texts: licenses/dependencies/npm/es-errors-1.3.0/LICENSE
+- npm es-object-atoms 1.1.2: MIT; https://www.npmjs.com/package/es-object-atoms/v/1.1.2; license texts: licenses/dependencies/npm/es-object-atoms-1.1.2/LICENSE
+- npm escape-html 1.0.3: MIT; https://www.npmjs.com/package/escape-html/v/1.0.3; license texts: licenses/dependencies/npm/escape-html-1.0.3/LICENSE
+- npm etag 1.8.1: MIT; https://www.npmjs.com/package/etag/v/1.8.1; license texts: licenses/dependencies/npm/etag-1.8.1/LICENSE
+- npm eventsource 3.0.7: MIT; https://www.npmjs.com/package/eventsource/v/3.0.7; license texts: licenses/dependencies/npm/eventsource-3.0.7/LICENSE
+- npm eventsource-parser 3.1.1: MIT; https://www.npmjs.com/package/eventsource-parser/v/3.1.1; license texts: licenses/dependencies/npm/eventsource-parser-3.1.1/LICENSE
+- npm express 5.3.0: MIT; https://www.npmjs.com/package/express/v/5.3.0; license texts: licenses/dependencies/npm/express-5.3.0/LICENSE
+- npm content-type 2.1.0: MIT; https://www.npmjs.com/package/content-type/v/2.1.0; license texts: licenses/dependencies/npm/content-type-2.1.0/LICENSE
+- npm express-rate-limit 8.7.3: MIT; https://www.npmjs.com/package/express-rate-limit/v/8.7.3; license texts: licenses/dependencies/npm/express-rate-limit-8.7.3/license
+- npm fast-deep-equal 3.1.3: MIT; https://www.npmjs.com/package/fast-deep-equal/v/3.1.3; license texts: licenses/dependencies/npm/fast-deep-equal-3.1.3/LICENSE
+- npm fast-uri 3.1.9: BSD-3-Clause; https://www.npmjs.com/package/fast-uri/v/3.1.9; license texts: licenses/dependencies/npm/fast-uri-3.1.9/LICENSE
+- npm finalhandler 2.1.1: MIT; https://www.npmjs.com/package/finalhandler/v/2.1.1; license texts: licenses/dependencies/npm/finalhandler-2.1.1/LICENSE
+- npm forwarded 0.2.0: MIT; https://www.npmjs.com/package/forwarded/v/0.2.0; license texts: licenses/dependencies/npm/forwarded-0.2.0/LICENSE
+- npm fresh 2.0.0: MIT; https://www.npmjs.com/package/fresh/v/2.0.0; license texts: licenses/dependencies/npm/fresh-2.0.0/LICENSE
+- npm function-bind 1.1.2: MIT; https://www.npmjs.com/package/function-bind/v/1.1.2; license texts: licenses/dependencies/npm/function-bind-1.1.2/LICENSE
+- npm get-intrinsic 1.3.0: MIT; https://www.npmjs.com/package/get-intrinsic/v/1.3.0; license texts: licenses/dependencies/npm/get-intrinsic-1.3.0/LICENSE
+- npm get-proto 1.0.1: MIT; https://www.npmjs.com/package/get-proto/v/1.0.1; license texts: licenses/dependencies/npm/get-proto-1.0.1/LICENSE
+- npm gopd 1.2.0: MIT; https://www.npmjs.com/package/gopd/v/1.2.0; license texts: licenses/dependencies/npm/gopd-1.2.0/LICENSE
+- npm has-symbols 1.1.0: MIT; https://www.npmjs.com/package/has-symbols/v/1.1.0; license texts: licenses/dependencies/npm/has-symbols-1.1.0/LICENSE
+- npm hasown 2.0.4: MIT; https://www.npmjs.com/package/hasown/v/2.0.4; license texts: licenses/dependencies/npm/hasown-2.0.4/LICENSE
+- npm hono 4.13.16: MIT; https://www.npmjs.com/package/hono/v/4.13.16; license texts: licenses/dependencies/npm/hono-4.13.16/LICENSE
+- npm http-errors 2.0.1: MIT; https://www.npmjs.com/package/http-errors/v/2.0.1; license texts: licenses/dependencies/npm/http-errors-2.0.1/LICENSE
+- npm iconv-lite 0.7.3: MIT; https://www.npmjs.com/package/iconv-lite/v/0.7.3; license texts: licenses/dependencies/npm/iconv-lite-0.7.3/LICENSE
+- npm inherits 2.0.4: ISC; https://www.npmjs.com/package/inherits/v/2.0.4; license texts: licenses/dependencies/npm/inherits-2.0.4/LICENSE
+- npm ip-address 10.7.5: MIT; https://www.npmjs.com/package/ip-address/v/10.7.5; license texts: licenses/dependencies/npm/ip-address-10.7.5/LICENSE
+- npm ipaddr.js 1.9.1: MIT; https://www.npmjs.com/package/ipaddr.js/v/1.9.1; license texts: licenses/dependencies/npm/ipaddr.js-1.9.1/LICENSE
+- npm is-promise 4.0.0: MIT; https://www.npmjs.com/package/is-promise/v/4.0.0; license texts: licenses/dependencies/npm/is-promise-4.0.0/LICENSE
+- npm isexe 2.0.0: ISC; https://www.npmjs.com/package/isexe/v/2.0.0; license texts: licenses/dependencies/npm/isexe-2.0.0/LICENSE
+- npm jose 6.2.15: MIT; https://www.npmjs.com/package/jose/v/6.2.15; license texts: licenses/dependencies/npm/jose-6.2.15/LICENSE.md
+- npm json-schema-traverse 1.0.0: MIT; https://www.npmjs.com/package/json-schema-traverse/v/1.0.0; license texts: licenses/dependencies/npm/json-schema-traverse-1.0.0/LICENSE
+- npm json-schema-typed 8.0.2: BSD-2-Clause; https://www.npmjs.com/package/json-schema-typed/v/8.0.2; license texts: licenses/dependencies/npm/json-schema-typed-8.0.2/LICENSE.md
+- npm math-intrinsics 1.1.0: MIT; https://www.npmjs.com/package/math-intrinsics/v/1.1.0; license texts: licenses/dependencies/npm/math-intrinsics-1.1.0/LICENSE
+- npm media-typer 1.1.1: MIT; https://www.npmjs.com/package/media-typer/v/1.1.1; license texts: licenses/dependencies/npm/media-typer-1.1.1/LICENSE
+- npm merge-descriptors 2.0.0: MIT; https://www.npmjs.com/package/merge-descriptors/v/2.0.0; license texts: licenses/dependencies/npm/merge-descriptors-2.0.0/license
+- npm mime-db 1.54.0: MIT; https://www.npmjs.com/package/mime-db/v/1.54.0; license texts: licenses/dependencies/npm/mime-db-1.54.0/LICENSE
+- npm mime-types 3.0.2: MIT; https://www.npmjs.com/package/mime-types/v/3.0.2; license texts: licenses/dependencies/npm/mime-types-3.0.2/LICENSE
+- npm ms 2.1.3: MIT; https://www.npmjs.com/package/ms/v/2.1.3; license texts: licenses/dependencies/npm/ms-2.1.3/license.md
+- npm negotiator 1.1.0: MIT; https://www.npmjs.com/package/negotiator/v/1.1.0; license texts: licenses/dependencies/npm/negotiator-1.1.0/LICENSE
+- npm content-type 2.1.0: MIT; https://www.npmjs.com/package/content-type/v/2.1.0; license texts: licenses/dependencies/npm/content-type-2.1.0/LICENSE
+- npm object-assign 4.1.1: MIT; https://www.npmjs.com/package/object-assign/v/4.1.1; license texts: licenses/dependencies/npm/object-assign-4.1.1/license
+- npm object-inspect 1.13.4: MIT; https://www.npmjs.com/package/object-inspect/v/1.13.4; license texts: licenses/dependencies/npm/object-inspect-1.13.4/LICENSE
+- npm on-finished 2.4.2: MIT; https://www.npmjs.com/package/on-finished/v/2.4.2; license texts: licenses/dependencies/npm/on-finished-2.4.2/LICENSE
+- npm once 1.4.0: ISC; https://www.npmjs.com/package/once/v/1.4.0; license texts: licenses/dependencies/npm/once-1.4.0/LICENSE
+- npm parseurl 1.3.3: MIT; https://www.npmjs.com/package/parseurl/v/1.3.3; license texts: licenses/dependencies/npm/parseurl-1.3.3/LICENSE
+- npm path-key 3.1.1: MIT; https://www.npmjs.com/package/path-key/v/3.1.1; license texts: licenses/dependencies/npm/path-key-3.1.1/license
+- npm path-to-regexp 8.4.2: MIT; https://www.npmjs.com/package/path-to-regexp/v/8.4.2; license texts: licenses/dependencies/npm/path-to-regexp-8.4.2/LICENSE
+- npm pkce-challenge 5.0.1: MIT; https://www.npmjs.com/package/pkce-challenge/v/5.0.1; license texts: licenses/dependencies/npm/pkce-challenge-5.0.1/LICENSE
+- npm proxy-addr 2.0.8: MIT; https://www.npmjs.com/package/proxy-addr/v/2.0.8; license texts: licenses/dependencies/npm/proxy-addr-2.0.8/LICENSE
+- npm qs 6.17.1: BSD-3-Clause; https://www.npmjs.com/package/qs/v/6.17.1; license texts: licenses/dependencies/npm/qs-6.17.1/LICENSE.md
+- npm range-parser 1.3.0: MIT; https://www.npmjs.com/package/range-parser/v/1.3.0; license texts: licenses/dependencies/npm/range-parser-1.3.0/LICENSE
+- npm raw-body 3.0.2: MIT; https://www.npmjs.com/package/raw-body/v/3.0.2; license texts: licenses/dependencies/npm/raw-body-3.0.2/LICENSE
+- npm require-from-string 2.0.2: MIT; https://www.npmjs.com/package/require-from-string/v/2.0.2; license texts: licenses/dependencies/npm/require-from-string-2.0.2/license
+- npm router 2.2.0: MIT; https://www.npmjs.com/package/router/v/2.2.0; license texts: licenses/dependencies/npm/router-2.2.0/LICENSE
+- npm safer-buffer 2.1.2: MIT; https://www.npmjs.com/package/safer-buffer/v/2.1.2; license texts: licenses/dependencies/npm/safer-buffer-2.1.2/LICENSE
+- npm send 1.2.1: MIT; https://www.npmjs.com/package/send/v/1.2.1; license texts: licenses/dependencies/npm/send-1.2.1/LICENSE
+- npm serve-static 2.2.1: MIT; https://www.npmjs.com/package/serve-static/v/2.2.1; license texts: licenses/dependencies/npm/serve-static-2.2.1/LICENSE
+- npm setprototypeof 1.2.0: ISC; https://www.npmjs.com/package/setprototypeof/v/1.2.0; license texts: licenses/dependencies/npm/setprototypeof-1.2.0/LICENSE
+- npm shebang-command 2.0.0: MIT; https://www.npmjs.com/package/shebang-command/v/2.0.0; license texts: licenses/dependencies/npm/shebang-command-2.0.0/license
+- npm shebang-regex 3.0.0: MIT; https://www.npmjs.com/package/shebang-regex/v/3.0.0; license texts: licenses/dependencies/npm/shebang-regex-3.0.0/license
+- npm side-channel 1.1.1: MIT; https://www.npmjs.com/package/side-channel/v/1.1.1; license texts: licenses/dependencies/npm/side-channel-1.1.1/LICENSE
+- npm side-channel-list 1.0.1: MIT; https://www.npmjs.com/package/side-channel-list/v/1.0.1; license texts: licenses/dependencies/npm/side-channel-list-1.0.1/LICENSE
+- npm side-channel-map 1.0.1: MIT; https://www.npmjs.com/package/side-channel-map/v/1.0.1; license texts: licenses/dependencies/npm/side-channel-map-1.0.1/LICENSE
+- npm side-channel-weakmap 1.0.2: MIT; https://www.npmjs.com/package/side-channel-weakmap/v/1.0.2; license texts: licenses/dependencies/npm/side-channel-weakmap-1.0.2/LICENSE
+- npm statuses 2.0.2: MIT; https://www.npmjs.com/package/statuses/v/2.0.2; license texts: licenses/dependencies/npm/statuses-2.0.2/LICENSE
+- npm toidentifier 1.0.1: MIT; https://www.npmjs.com/package/toidentifier/v/1.0.1; license texts: licenses/dependencies/npm/toidentifier-1.0.1/LICENSE
+- npm type-is 2.1.0: MIT; https://www.npmjs.com/package/type-is/v/2.1.0; license texts: licenses/dependencies/npm/type-is-2.1.0/LICENSE
+- npm content-type 2.1.0: MIT; https://www.npmjs.com/package/content-type/v/2.1.0; license texts: licenses/dependencies/npm/content-type-2.1.0/LICENSE
+- npm typescript 5.9.3: Apache-2.0; https://www.npmjs.com/package/typescript/v/5.9.3; license texts: licenses/dependencies/npm/typescript-5.9.3/LICENSE.txt
+- npm undici-types 6.21.0: MIT; https://www.npmjs.com/package/undici-types/v/6.21.0; license texts: licenses/dependencies/npm/undici-types-6.21.0/LICENSE
+- npm unpipe 1.0.0: MIT; https://www.npmjs.com/package/unpipe/v/1.0.0; license texts: licenses/dependencies/npm/unpipe-1.0.0/LICENSE
+- npm vary 1.1.2: MIT; https://www.npmjs.com/package/vary/v/1.1.2; license texts: licenses/dependencies/npm/vary-1.1.2/LICENSE
+- npm which 2.0.2: ISC; https://www.npmjs.com/package/which/v/2.0.2; license texts: licenses/dependencies/npm/which-2.0.2/LICENSE
+- npm wrappy 1.0.2: ISC; https://www.npmjs.com/package/wrappy/v/1.0.2; license texts: licenses/dependencies/npm/wrappy-1.0.2/LICENSE
+- npm zod 4.6.7: MIT; https://www.npmjs.com/package/zod/v/4.6.7; license texts: licenses/dependencies/npm/zod-4.6.7/LICENSE
+- npm zod-to-json-schema 3.25.2: ISC; https://www.npmjs.com/package/zod-to-json-schema/v/3.25.2; license texts: licenses/dependencies/npm/zod-to-json-schema-3.25.2/LICENSE

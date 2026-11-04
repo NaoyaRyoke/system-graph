@@ -1,0 +1,5707 @@
+// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.
+//! `SQLite` persistence adapter for `Code System Graph` snapshots.
+//! Modified 2026-11-03: security dependency update; progress-hook mutability adapted
+//! to rusqlite 0.41. No graph schema, authorization, or remote wire change.
+//!
+//! Durable database files are supported on Unix and Windows because the store
+//! requires enforceable owner-only file permissions.
+
+mod access_lock;
+mod backup_restore;
+mod file_permissions;
+mod publication;
+mod schema_contract;
+
+use std::collections::{BTreeMap, BTreeSet};
+use std::fs::{self, OpenOptions};
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::sync::LazyLock;
+use std::time::{Duration, SystemTime, UNIX_EPOCH};
+
+use access_lock::StoreAccessLock;
+use backup_restore::{backup_connection, restore_database};
+use code_system_graph_model::{
+    ArtifactChange, ArtifactFingerprint, CheckoutId, Community, CommunityAlgorithm,
+    CommunityConfig, CommunityId, CommunityMetrics, CommunitySnapshot, Edge, EdgeId, EdgeKind,
+    EpistemicStatus, Evidence, EvidenceId, ExtractorRun, HttpLinkCoverage, HttpLinkGap,
+    HttpLinkGapReason, HttpLinkReport, LinkDecision, LinkStatus, NativePath, Node, NodeId,
+    NodeKind, RepoFreshness, RepoFreshnessState, RepoId, RepositoryCoverageGap, RepositoryRecord,
+    StoredExtractorBatch, WorkspaceId, WorkspaceRecord, contains_unsafe_metadata_characters,
+    stable_id,
+};
+pub use file_permissions::set_owner_only_file;
+use file_permissions::{
+    SQLITE_ARTIFACT_SUFFIXES, artifact_path, prepare_database_file, restrict_store_permissions,
+};
+use publication::{PublicationInput, publish_current_graph, replace_manual_links};
+use rusqlite::{Connection, OpenFlags, OptionalExtension, params};
+use schema_contract::validate_exact_schema;
+use sysinfo::{Pid, ProcessesToUpdate, System};
+use thiserror::Error;
+
+const INITIAL_SCHEMA: &str = include_str!("../migrations/0001_initial.sql");
+const SCHEMA_MODIFICATION_NOTICE: &str = "-- Modified from Code System Graph v1.2.1; local schema/property/provenance hardening. See VENDOR.md.\n";
+static SCHEMA_ID: LazyLock<String> = LazyLock::new(|| embedded_schema_identity(INITIAL_SCHEMA));
+
+// Exclude only this fixed attribution line. Hash every original SQL byte as before;
+// graph input, stored schema identity and exact schema validation are unchanged.
+fn embedded_schema_identity(source: &str) -> String {
+    let normalized = source.replace("\r\n", "\n");
+    stable_id(
+        "schema",
+        normalized
+            .strip_prefix(SCHEMA_MODIFICATION_NOTICE)
+            .unwrap_or(&normalized),
+    )
+}
+
+/// Returns the identity of the exact on-disk schema supported by this binary.
+///
+/// The identity is derived from the embedded SQL payload (excluding its fixed attribution), so any schema change produces a
+/// new identity and databases created by other builds are rejected.
+#[must_use]
+pub fn schema_identity() -> &'static str {
+    SCHEMA_ID.as_str()
+}
+
+/// Source-free runtime capabilities observed from one open store connection.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoreDiagnostics {
+    /// Active `SQLite` journal mode.
+    pub journal_mode: String,
+    /// Whether foreign-key enforcement is active.
+    pub foreign_keys_enabled: bool,
+    /// Whether the managed FTS5 node index exists.
+    pub fts5_index_available: bool,
+}
+const COMMUNITY_ALGORITHM_JSON_MAX_BYTES: usize = 256;
+const COMMUNITY_CONFIG_JSON_MAX_BYTES: usize = 65_536;
+const COMMUNITY_METRICS_JSON_MAX_BYTES: usize = 65_536;
+const COMMUNITY_EXPLANATION_JSON_MAX_BYTES: usize = 1_048_576;
+const NODE_SEARCH_QUERY_MAX_BYTES: usize = 1_024;
+const NODE_SEARCH_TERM_MAX_COUNT: usize = 32;
+const MANUAL_LINK_ID_MAX_BYTES: usize = 2_048;
+const MANUAL_LINK_KIND_MAX_BYTES: usize = 256;
+const MANUAL_LINK_REASON_MAX_BYTES: usize = 4_096;
+const MANUAL_LINK_DECISION_JSON_MAX_BYTES: usize = 262_144;
+const PROVIDER_COMPONENT_MAX_BYTES: usize = 256;
+const PROVIDER_CAPABILITIES_JSON_MAX_BYTES: usize = 65_536;
+const PROVIDER_CAPABILITY_COUNT_MAX: usize = 256;
+const QUERY_CACHE_FINGERPRINT_MAX_BYTES: usize = 256;
+const QUERY_CACHE_RESULT_MAX_BYTES: usize = 1_048_576;
+
+/// Embedded `SQLite` store with transactional snapshot publication.
+pub struct SqliteStore {
+    connection: Connection,
+    _access_lock: Option<StoreAccessLock>,
+}
+
+/// Exclusive writer lock represented by a restrictive sidecar file.
+#[derive(Debug)]
+pub struct StoreLock {
+    path: PathBuf,
+    content: String,
+}
+
+fn bounded_fts_disjunction(query: &str) -> String {
+    let mut seen = BTreeSet::new();
+    let mut terms = Vec::new();
+    for term in query
+        .split(|character: char| !character.is_alphanumeric())
+        .filter(|term| !term.is_empty())
+    {
+        let normalized = term.to_lowercase();
+        if seen.insert(normalized.clone()) {
+            terms.push(format!("\"{}\"", normalized.replace('"', "\"\"")));
+            if terms.len() == NODE_SEARCH_TERM_MAX_COUNT {
+                break;
+            }
+        }
+    }
+    if terms.is_empty() {
+        format!("\"{}\"", query.replace('"', "\"\""))
+    } else {
+        terms.join(" OR ")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LockMetadata {
+    pid: u32,
+    process_started_at: u64,
+    token: String,
+}
+
+struct StoredWorkspaceIdentity {
+    id: String,
+    manifest_hash: String,
+    config_path: Option<NativePath>,
+}
+
+struct StoredRepositoryRow {
+    alias: String,
+    repo_id: String,
+    checkout_id: String,
+    path_encoding: String,
+    path_bytes: Vec<u8>,
+    path_display: String,
+    common_encoding: Option<String>,
+    common_bytes: Option<Vec<u8>>,
+    common_display: Option<String>,
+    normalized_remote: Option<String>,
+    head_commit: Option<String>,
+    is_linked_worktree: bool,
+    working_tree_dirty: bool,
+}
+
+/// Counts and identity of a published snapshot.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct StoredSnapshotSummary {
+    /// Stable snapshot identifier.
+    pub snapshot_id: String,
+    /// Number of graph nodes.
+    pub node_count: usize,
+    /// Number of graph edges.
+    pub edge_count: usize,
+    /// Number of evidence records.
+    pub evidence_count: usize,
+}
+
+/// One ranked full-text match from the current graph snapshot.
+#[derive(Debug, Clone, PartialEq)]
+pub struct StoredNodeSearchHit {
+    /// Matched graph node.
+    pub node: Node,
+    /// Native FTS5 `bm25` score; lower values are more relevant.
+    pub fts_rank: f64,
+}
+
+/// Whether a manual record creates a link or suppresses an automatically inferred link.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ManualLinkDisposition {
+    /// Include the declared link in the snapshot.
+    Active,
+    /// Suppress an automatically inferred link with the same endpoints and kind.
+    Suppression,
+}
+
+impl ManualLinkDisposition {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::Active => "active",
+            Self::Suppression => "suppression",
+        }
+    }
+
+    fn from_stored(value: &str) -> Option<Self> {
+        match value {
+            "active" => Some(Self::Active),
+            "suppression" => Some(Self::Suppression),
+            _ => None,
+        }
+    }
+}
+
+/// Source-free manual link declaration retained with one immutable graph snapshot.
+#[derive(Debug, Clone, PartialEq)]
+pub struct ManualLinkRecord {
+    /// Stable identifier for this configured declaration.
+    pub id: String,
+    /// Snapshot that owns this historical record.
+    pub snapshot_id: String,
+    /// Existing source node in the same snapshot.
+    pub source_node_id: NodeId,
+    /// Existing target node in the same snapshot.
+    pub target_node_id: NodeId,
+    /// Normalized link kind used to match active or inferred links.
+    pub kind: String,
+    /// Whether the declaration creates or suppresses the link.
+    pub disposition: ManualLinkDisposition,
+    /// Required operator rationale without source excerpts or provider payloads.
+    pub reason: String,
+    /// Complete versioned linker decision retained for explainability.
+    pub decision: LinkDecision,
+    /// Version of the configuration format that produced this record.
+    pub config_version: u32,
+}
+
+/// Source-free capability discovery result for one provider version and repository.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ProviderCapabilityRecord {
+    /// Workspace containing the registered repository.
+    pub workspace_name: String,
+    /// Stable repository identifier.
+    pub repo_id: RepoId,
+    /// Provider implementation name.
+    pub provider: String,
+    /// Probed provider version.
+    pub provider_version: String,
+    /// Normalized capability names, without provider responses or source.
+    pub capabilities: Vec<String>,
+    /// Observation timestamp in Unix milliseconds.
+    pub observed_at_unix_ms: u64,
+}
+
+/// Bounded source-free cached result for one immutable snapshot and exact request fingerprint.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct QueryCacheRecord {
+    /// Workspace owning the immutable snapshot.
+    pub workspace_name: String,
+    /// Snapshot used to compute the result.
+    pub snapshot_id: String,
+    /// Stable fingerprint of the complete public query input.
+    pub input_fingerprint: String,
+    /// Versioned JSON result without source bodies.
+    pub result_summary_json: Vec<u8>,
+    /// Observation timestamp in Unix milliseconds.
+    pub stored_at_unix_ms: u64,
+    /// Optional expiry timestamp in Unix milliseconds.
+    pub expires_at_unix_ms: Option<u64>,
+}
+
+/// Immutable inputs published as one atomic snapshot transaction.
+#[derive(Debug, Clone, Copy)]
+pub struct SnapshotBatch<'a> {
+    /// Validated workspace registry.
+    pub workspace: &'a WorkspaceRecord,
+    /// Stable snapshot identifier.
+    pub snapshot_id: &'a str,
+    /// Complete graph node set.
+    pub nodes: &'a [Node],
+    /// Complete graph edge set.
+    pub edges: &'a [Edge],
+    /// Complete evidence set.
+    pub evidence: &'a [Evidence],
+    /// Current extractor-relevant artifact fingerprints.
+    pub fingerprints: &'a [ArtifactFingerprint],
+    /// Reusable source-owned extractor outputs.
+    pub extractor_batches: &'a [StoredExtractorBatch],
+    /// Extractor execution metrics.
+    pub extractor_runs: &'a [ExtractorRun],
+    /// Source-free manual link declarations for this exact snapshot.
+    pub manual_links: &'a [ManualLinkRecord],
+    /// Optional community analysis for this exact graph snapshot.
+    pub community_snapshot: Option<&'a CommunitySnapshot>,
+}
+
+/// Artifact rows of a candidate that differ from the current graph of its workspace.
+///
+/// Publishing with a delta writes only these rows; every other stored fingerprint and extractor
+/// batch must already equal the candidate, which holds when the delta was planned against the
+/// stored fingerprints under the writer lock.
+#[derive(Debug, Clone, Copy)]
+pub struct ArtifactDelta<'a> {
+    /// Added or modified fingerprints.
+    pub upserted_fingerprints: &'a [&'a ArtifactFingerprint],
+    /// Extractor batches that are not stored in their current form.
+    pub upserted_batches: &'a [&'a StoredExtractorBatch],
+    /// Artifacts removed since the current graph; both their fingerprint and batch are deleted.
+    pub removed: &'a [ArtifactChange],
+}
+
+/// Result of restoring a database backup.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RestoreReport {
+    /// Backup used as the restore source.
+    pub source_path: PathBuf,
+    /// Safety backup of the replaced database, when it existed.
+    pub safety_backup_path: Option<PathBuf>,
+    /// Exact schema identity restored.
+    pub schema_id: String,
+}
+
+/// Compact persisted workspace registry entry.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct WorkspaceRegistrySummary {
+    /// Stable workspace identifier.
+    pub id: WorkspaceId,
+    /// User-facing workspace name.
+    pub name: String,
+    /// Current merged manifest fingerprint.
+    pub manifest_hash: String,
+    /// Canonical workspace manifest path.
+    pub config_path: Option<NativePath>,
+    /// Number of registered repository aliases.
+    pub repository_count: usize,
+}
+
+/// Error returned by the `SQLite` adapter.
+#[derive(Debug, Error)]
+pub enum StoreError {
+    /// `SQLite` operation failed.
+    #[error("SQLite operation failed: {0}")]
+    Sqlite(#[from] rusqlite::Error),
+    /// A domain tag could not be encoded or decoded.
+    #[error("stored domain value is invalid: {0}")]
+    Serialization(#[from] serde_json::Error),
+    /// No current snapshot exists for a workspace.
+    #[error("workspace `{0}` has no current snapshot")]
+    CurrentSnapshotMissing(String),
+    /// Persisted workspace registry is absent or incomplete.
+    #[error("workspace registry `{0}` is missing required identity data")]
+    RegistryIncomplete(String),
+    /// Filesystem operation failed.
+    #[error("filesystem operation failed for `{path}`: {source}")]
+    Io {
+        /// Path involved in the failed operation.
+        path: PathBuf,
+        /// Underlying operating-system error.
+        source: std::io::Error,
+    },
+    /// A database does not match the only schema supported by this binary.
+    #[error("database does not match the current schema")]
+    InvalidSchema,
+    /// Another writer owns a non-stale lock.
+    #[error("store writer lock is already held at `{0}`")]
+    LockHeld(PathBuf),
+    /// Integer cannot be represented by the target domain type.
+    #[error("stored integer `{field}` is outside the supported range: {value}")]
+    IntegerOutOfRange {
+        /// Field being converted.
+        field: &'static str,
+        /// Invalid signed value.
+        value: i128,
+    },
+    /// Backup failed validation or aliases the destination.
+    #[error("invalid backup `{path}`: {reason}")]
+    InvalidBackup {
+        /// Backup path.
+        path: PathBuf,
+        /// Actionable validation reason.
+        reason: String,
+    },
+    /// An operation failed and its partial database artifacts could not be removed.
+    #[error("operation failed ({operation}); cleanup also failed ({cleanup})")]
+    OperationCleanupFailed {
+        /// Error that interrupted the operation.
+        operation: Box<StoreError>,
+        /// Error that prevented cleanup of partial artifacts.
+        cleanup: Box<StoreError>,
+    },
+    /// Bounded FTS query is empty or has an invalid limit.
+    #[error("invalid node search query: {0}")]
+    InvalidSearchQuery(String),
+    /// A graph snapshot violates identity, reference, or safe-metadata invariants.
+    #[error("graph snapshot is invalid: {0}")]
+    InvalidGraphSnapshot(String),
+    /// A requested immutable graph snapshot does not exist.
+    #[error("graph snapshot `{0}` does not exist")]
+    SnapshotMissing(String),
+    /// A requested graph snapshot has no persisted community analysis.
+    #[error("graph snapshot `{0}` has no community analysis")]
+    CommunitySnapshotMissing(String),
+    /// Community analysis targets a different graph snapshot.
+    #[error(
+        "community snapshot `{community_snapshot_id}` does not match graph snapshot \
+         `{batch_snapshot_id}`"
+    )]
+    CommunitySnapshotMismatch {
+        /// Graph snapshot being published.
+        batch_snapshot_id: String,
+        /// Graph snapshot named by the community analysis.
+        community_snapshot_id: String,
+    },
+    /// A community identifier occurs more than once in one analysis.
+    #[error("community `{community_id}` is duplicated in snapshot `{snapshot_id}`")]
+    DuplicateCommunityId {
+        /// Graph snapshot being validated.
+        snapshot_id: String,
+        /// Repeated community identifier.
+        community_id: String,
+    },
+    /// A node occurs more than once in one community membership list.
+    #[error(
+        "node `{node_id}` is duplicated in community `{community_id}` for snapshot `{snapshot_id}`"
+    )]
+    DuplicateCommunityMembership {
+        /// Graph snapshot being validated.
+        snapshot_id: String,
+        /// Community containing the repeated member.
+        community_id: String,
+        /// Repeated member node.
+        node_id: String,
+    },
+    /// A community membership references a node absent from its graph snapshot.
+    #[error(
+        "community `{community_id}` references missing node `{node_id}` in snapshot `{snapshot_id}`"
+    )]
+    CommunityMembershipNodeMissing {
+        /// Graph snapshot being validated.
+        snapshot_id: String,
+        /// Community containing the invalid member.
+        community_id: String,
+        /// Missing graph node.
+        node_id: String,
+    },
+    /// A variable JSON payload exceeds its schema bound.
+    #[error("community JSON field `{field}` is {actual_bytes} bytes; maximum is {max_bytes}")]
+    CommunityJsonTooLarge {
+        /// Logical JSON field.
+        field: &'static str,
+        /// Encoded UTF-8 byte length.
+        actual_bytes: usize,
+        /// Maximum accepted byte length.
+        max_bytes: usize,
+    },
+    /// Persisted rows cannot be decoded into a valid domain value.
+    #[error("stored {entity} is malformed: {reason}")]
+    MalformedStoredData {
+        /// Stored entity being decoded.
+        entity: String,
+        /// Specific invariant or decoding failure.
+        reason: String,
+    },
+    /// A store-local persistence record violates safety, size, or reference invariants.
+    #[error("invalid persistence record: {0}")]
+    InvalidPersistenceRecord(String),
+}
+
+impl StoreLock {
+    /// Acquires an exclusive writer lock and recovers an expired lock once.
+    ///
+    /// The sidecar path is the database path with `.lock` appended to its extension. On Unix it
+    /// is created with mode `0600`. Dropping the returned guard removes only a lock whose token
+    /// still matches this owner.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::LockHeld`] for an active lock or [`StoreError::Io`] when lock
+    /// metadata cannot be created, inspected, or replaced.
+    pub fn acquire(database_path: &Path, stale_after: Duration) -> Result<Self, StoreError> {
+        let path = lock_path(database_path);
+        let now = SystemTime::now()
+            .duration_since(UNIX_EPOCH)
+            .map_err(|source| StoreError::Io {
+                path: path.clone(),
+                source: std::io::Error::other(source),
+            })?;
+        let token = stable_id(
+            "lock",
+            &format!(
+                "{}:{}:{}",
+                std::process::id(),
+                now.as_secs(),
+                now.subsec_nanos()
+            ),
+        );
+        let content = LockMetadata {
+            pid: std::process::id(),
+            process_started_at: process_start_time(std::process::id()).unwrap_or_default(),
+            token,
+        }
+        .encode();
+        for attempt in 0..2 {
+            match create_lock_file(&path) {
+                Ok(mut file) => {
+                    file.write_all(content.as_bytes())
+                        .and_then(|()| file.sync_all())
+                        .map_err(|source| StoreError::Io {
+                            path: path.clone(),
+                            source,
+                        })?;
+                    return Ok(Self { path, content });
+                }
+                Err(source) if source.kind() == std::io::ErrorKind::AlreadyExists => {
+                    if attempt == 0 && lock_is_stale(&path, stale_after)? {
+                        fs::remove_file(&path).map_err(|source| StoreError::Io {
+                            path: path.clone(),
+                            source,
+                        })?;
+                        continue;
+                    }
+                    return Err(StoreError::LockHeld(path));
+                }
+                Err(source) => {
+                    return Err(StoreError::Io {
+                        path: path.clone(),
+                        source,
+                    });
+                }
+            }
+        }
+        Err(StoreError::LockHeld(path))
+    }
+}
+
+impl Drop for StoreLock {
+    fn drop(&mut self) {
+        let owned = fs::read_to_string(&self.path).is_ok_and(|content| content == self.content);
+        if owned {
+            let _result = fs::remove_file(&self.path);
+        }
+    }
+}
+
+impl SqliteStore {
+    /// Returns whether [`Self::restore_from`] can replace an existing on-disk database.
+    #[must_use]
+    pub const fn supports_inplace_restore() -> bool {
+        cfg!(any(target_os = "linux", target_os = "macos", windows))
+    }
+
+    /// Interrupts active and future `SQLite` statements when `should_interrupt` returns true.
+    ///
+    /// The callback is sampled by `SQLite` every 1,000 virtual-machine instructions and remains
+    /// installed for this store connection's lifetime.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if `SQLite` cannot install the progress callback.
+    pub fn interrupt_queries_when<F>(&mut self, should_interrupt: F) -> Result<(), StoreError>
+    where
+        F: FnMut() -> bool + Send + 'static,
+    {
+        self.connection
+            .progress_handler(1_000, Some(should_interrupt))?;
+        Ok(())
+    }
+
+    /// Opens an exact-schema store or initializes a new empty database.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if `SQLite` cannot open, initialize, or validate the database.
+    pub fn open(path: impl AsRef<Path>) -> Result<Self, StoreError> {
+        let path = path.as_ref();
+        let access_lock = StoreAccessLock::shared(path)?;
+        let connection = open_exact(access_lock.database_path())?;
+        Ok(Self {
+            connection,
+            _access_lock: Some(access_lock),
+        })
+    }
+
+    /// Creates a validated online backup of the exact embedded schema.
+    ///
+    /// A source on read-only media is treated as immutable only when no `SQLite` sidecars exist.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the source is invalid or the destination already exists.
+    pub fn backup_file(database_path: &Path, destination: &Path) -> Result<(), StoreError> {
+        let access_lock = StoreAccessLock::shared(database_path)?;
+        backup_restore::backup_file(access_lock.database_path(), destination)
+    }
+
+    /// Restores a validated backup with the exact embedded schema.
+    ///
+    /// The existing destination is first preserved as a non-overwriting safety backup.
+    /// Restore is refused while another [`SqliteStore`] has the destination open.
+    /// In-place replacement is supported on Linux, macOS, and Windows.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if validation, locking, safety backup, or restore fails.
+    pub fn restore_from(
+        database_path: &Path,
+        backup_path: &Path,
+    ) -> Result<RestoreReport, StoreError> {
+        if database_path.exists() && !Self::supports_inplace_restore() {
+            return Err(StoreError::Io {
+                path: database_path.to_path_buf(),
+                source: std::io::Error::new(
+                    std::io::ErrorKind::Unsupported,
+                    "safe in-place restore is unsupported on this platform; \
+                     back up the database, remove it, then restore or reinitialize",
+                ),
+            });
+        }
+        let access_lock = StoreAccessLock::exclusive(database_path)?;
+        restore_database(
+            access_lock.database_path(),
+            backup_path,
+            || {},
+            |_| {},
+            |_| Ok(()),
+            || Ok(()),
+        )
+    }
+
+    /// Opens an existing store without writes or implicit schema changes.
+    ///
+    /// A database on read-only media is treated as immutable only when no `SQLite` sidecars exist.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if the database is absent, corrupt, or not the exact embedded schema.
+    pub fn open_read_only(path: impl AsRef<Path>) -> Result<Self, StoreError> {
+        let path = path.as_ref();
+        let access_lock = StoreAccessLock::shared(path)?;
+        let connection = open_read_only_connection(access_lock.database_path(), |connection| {
+            connection.pragma_update(None, "foreign_keys", true)?;
+            connection.busy_timeout(Duration::from_secs(5))?;
+            validate_exact_schema(connection)
+        })?;
+        Ok(Self {
+            connection,
+            _access_lock: Some(access_lock),
+        })
+    }
+
+    /// Creates an in-memory store for isolated tests and ephemeral operations.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if `SQLite` cannot configure or initialize the database.
+    pub fn in_memory() -> Result<Self, StoreError> {
+        Self::from_connection(Connection::open_in_memory()?)
+    }
+
+    fn from_connection(mut connection: Connection) -> Result<Self, StoreError> {
+        configure_connection(&connection)?;
+        if database_is_empty(&connection)? {
+            initialize_empty_schema(&mut connection)?;
+        }
+        validate_exact_schema(&connection)?;
+        Ok(Self {
+            connection,
+            _access_lock: None,
+        })
+    }
+
+    /// Returns the schema identity recorded by this store.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when schema metadata cannot be read.
+    pub fn schema_id(&self) -> Result<String, StoreError> {
+        stored_schema_id(&self.connection)
+    }
+
+    /// Returns the opaque identity that binds disposable operational state to this database.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when exact schema metadata cannot be read.
+    pub fn database_instance_id(&self) -> Result<String, StoreError> {
+        database_instance_id(&self.connection)
+    }
+
+    /// Atomically replaces repository registrations for one workspace.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] on serialization, constraint, or transaction failure.
+    pub fn save_workspace_registry(
+        &mut self,
+        workspace: &WorkspaceRecord,
+    ) -> Result<(), StoreError> {
+        let transaction = self.connection.transaction()?;
+        upsert_registry(&transaction, workspace)?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    /// Returns whether a workspace name is already persisted.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the registry cannot be queried.
+    pub fn workspace_exists(&self, workspace: &str) -> Result<bool, StoreError> {
+        Ok(self.connection.query_row(
+            "SELECT EXISTS(SELECT 1 FROM workspaces WHERE name = ?1)",
+            [workspace],
+            |row| row.get(0),
+        )?)
+    }
+
+    /// Removes one workspace and garbage-collects unreferenced repository records.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the transactional removal fails.
+    pub fn remove_workspace(&mut self, workspace: &str) -> Result<bool, StoreError> {
+        let transaction = self.connection.transaction()?;
+        let removed = transaction.execute("DELETE FROM workspaces WHERE name = ?1", [workspace])?;
+        transaction.execute(
+            "DELETE FROM repository_checkouts
+             WHERE NOT EXISTS (
+                SELECT 1 FROM workspace_repositories wr
+                WHERE wr.checkout_id = repository_checkouts.id
+             )",
+            [],
+        )?;
+        transaction.execute(
+            "DELETE FROM repositories
+             WHERE NOT EXISTS (
+                SELECT 1 FROM workspace_repositories wr
+                WHERE wr.repo_id = repositories.id
+             )",
+            [],
+        )?;
+        transaction.commit()?;
+        Ok(removed > 0)
+    }
+
+    /// Lists persisted workspaces in deterministic name order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when registry rows or counts cannot be read.
+    pub fn list_workspaces(&self) -> Result<Vec<WorkspaceRegistrySummary>, StoreError> {
+        let mut statement = self.connection.prepare(
+            "SELECT
+                w.id, w.name, w.manifest_hash, w.config_path_encoding, w.config_path,
+                w.config_path_display, COUNT(wr.alias)
+             FROM workspaces w
+             LEFT JOIN workspace_repositories wr ON wr.workspace_name = w.name
+             WHERE w.id IS NOT NULL
+             GROUP BY
+                w.id, w.name, w.manifest_hash, w.config_path_encoding, w.config_path,
+                w.config_path_display
+             ORDER BY w.name",
+        )?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, Option<String>>(3)?,
+                    row.get::<_, Option<Vec<u8>>>(4)?,
+                    row.get::<_, Option<String>>(5)?,
+                    row.get::<_, i64>(6)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        rows.into_iter()
+            .map(
+                |(id, name, manifest_hash, encoding, bytes, display, repository_count)| {
+                    let config_path = match (encoding, bytes, display) {
+                        (Some(encoding), Some(bytes), Some(display)) => Some(NativePath {
+                            encoding: serde_json::from_str(&encoding)?,
+                            bytes,
+                            display,
+                        }),
+                        _ => None,
+                    };
+                    Ok(WorkspaceRegistrySummary {
+                        id: WorkspaceId::new(id),
+                        name,
+                        manifest_hash,
+                        config_path,
+                        repository_count: count_to_usize(
+                            "workspace_repositories",
+                            repository_count,
+                        )?,
+                    })
+                },
+            )
+            .collect()
+    }
+
+    /// Loads a workspace and its repository registrations in alias order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::RegistryIncomplete`] when required identity data is missing, or
+    /// another [`StoreError`] when stored values are invalid.
+    pub fn load_workspace_registry(&self, workspace: &str) -> Result<WorkspaceRecord, StoreError> {
+        let identity = load_workspace_identity(&self.connection, workspace)?;
+        let repositories = load_workspace_repositories(&self.connection, workspace)?;
+        Ok(WorkspaceRecord {
+            id: WorkspaceId::new(identity.id),
+            name: workspace.to_owned(),
+            manifest_hash: identity.manifest_hash,
+            config_path: identity.config_path,
+            repositories,
+        })
+    }
+
+    /// Creates a consistent online backup at a new destination path.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the destination already exists or the backup cannot complete.
+    pub fn backup_to(&self, destination: &Path) -> Result<(), StoreError> {
+        backup_connection(&self.connection, destination)
+    }
+
+    /// Loads per-repository freshness from the current workspace snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored freshness is invalid.
+    pub fn load_current_freshness(
+        &self,
+        workspace: &str,
+    ) -> Result<Vec<RepoFreshness>, StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            self.load_freshness_snapshot(&snapshot_id)
+        })
+    }
+
+    /// Loads per-repository freshness from one immutable graph snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the snapshot is absent or stored freshness is invalid.
+    pub fn load_freshness_snapshot(
+        &self,
+        snapshot_id: &str,
+    ) -> Result<Vec<RepoFreshness>, StoreError> {
+        self.consistent_read(|| {
+            let workspace = self.require_snapshot(snapshot_id)?;
+            let mut statement = self.connection.prepare(
+                "SELECT repo_id, checkout_id, head_commit, manifest_hash, state, reason
+                 FROM repository_snapshot_freshness
+                 WHERE workspace_name = ?1
+                 ORDER BY repo_id, checkout_id",
+            )?;
+            let rows = statement
+                .query_map([workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, Option<String>>(5)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows.into_iter()
+                .map(
+                    |(repo_id, checkout_id, head_commit, manifest_hash, state, reason)| {
+                        Ok(RepoFreshness {
+                            repo_id: RepoId::new(repo_id),
+                            checkout_id: CheckoutId::new(checkout_id),
+                            head_commit,
+                            manifest_hash,
+                            state: serde_json::from_str::<RepoFreshnessState>(&state)?,
+                            reason,
+                        })
+                    },
+                )
+                .collect()
+        })
+    }
+
+    /// Loads the HTTP link coverage of the current graph with at most `gap_limit` gaps: calls
+    /// without a provider first, then ambiguous calls, then external calls. The second value is
+    /// the total number of stored gaps.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored coverage is invalid.
+    pub fn load_http_link_report(
+        &self,
+        workspace: &str,
+        gap_limit: usize,
+    ) -> Result<(HttpLinkReport, usize), StoreError> {
+        self.consistent_read(|| {
+            self.current_snapshot_id(workspace)?;
+            let counts = self
+                .connection
+                .query_row(
+                    "SELECT linked, no_provider, ambiguous, external
+                     FROM http_link_coverage WHERE workspace_name = ?1",
+                    [workspace],
+                    |row| {
+                        Ok([
+                            row.get::<_, i64>(0)?,
+                            row.get::<_, i64>(1)?,
+                            row.get::<_, i64>(2)?,
+                            row.get::<_, i64>(3)?,
+                        ])
+                    },
+                )
+                .optional()?
+                .unwrap_or_default();
+            let count = |value: i64| {
+                u64::try_from(value).map_err(|_| StoreError::IntegerOutOfRange {
+                    field: "http_link_coverage",
+                    value: i128::from(value),
+                })
+            };
+            let coverage = HttpLinkCoverage {
+                linked: count(counts[0])?,
+                no_provider: count(counts[1])?,
+                ambiguous: count(counts[2])?,
+                external: count(counts[3])?,
+            };
+            let total = self.connection.query_row(
+                "SELECT COUNT(*) FROM http_link_gaps WHERE workspace_name = ?1",
+                [workspace],
+                |row| row.get::<_, i64>(0),
+            )?;
+            let limit = i64::try_from(gap_limit).unwrap_or(i64::MAX);
+            let gaps = self.http_link_gaps(
+                "SELECT caller_node_id, method, path, reason, candidates_json
+                 FROM http_link_gaps
+                 WHERE workspace_name = ?1
+                 ORDER BY CASE reason
+                     WHEN 'no_provider' THEN 0 WHEN 'ambiguous' THEN 1 ELSE 2 END,
+                     caller_node_id, method, path
+                 LIMIT ?2",
+                params![workspace, limit],
+            )?;
+            Ok((
+                HttpLinkReport { coverage, gaps },
+                usize::try_from(total).unwrap_or(usize::MAX),
+            ))
+        })
+    }
+
+    /// Loads the HTTP link gaps of the given callers in the current graph.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored gaps are invalid.
+    pub fn load_http_link_gaps_for_callers(
+        &self,
+        workspace: &str,
+        callers: &[NodeId],
+    ) -> Result<Vec<HttpLinkGap>, StoreError> {
+        if callers.is_empty() {
+            return Ok(Vec::new());
+        }
+        let callers =
+            serde_json::to_string(&callers.iter().map(NodeId::as_str).collect::<Vec<_>>())?;
+        self.consistent_read(|| {
+            self.current_snapshot_id(workspace)?;
+            self.http_link_gaps(
+                "SELECT caller_node_id, method, path, reason, candidates_json
+                 FROM http_link_gaps
+                 WHERE workspace_name = ?1
+                   AND caller_node_id IN (SELECT value FROM json_each(?2))
+                 ORDER BY caller_node_id, method, path, reason",
+                params![workspace, callers],
+            )
+        })
+    }
+
+    fn http_link_gaps(
+        &self,
+        sql: &str,
+        parameters: impl rusqlite::Params,
+    ) -> Result<Vec<HttpLinkGap>, StoreError> {
+        let mut statement = self.connection.prepare(sql)?;
+        let rows = statement
+            .query_map(parameters, |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                    row.get::<_, String>(3)?,
+                    row.get::<_, String>(4)?,
+                ))
+            })?
+            .collect::<Result<Vec<_>, _>>()?;
+        rows.into_iter()
+            .map(|(caller, method, path, reason, candidates)| {
+                let reason = HttpLinkGapReason::parse(&reason).ok_or_else(|| {
+                    StoreError::InvalidGraphSnapshot(format!(
+                        "unknown HTTP link gap reason `{reason}`"
+                    ))
+                })?;
+                Ok(HttpLinkGap {
+                    caller: NodeId::new(caller),
+                    method,
+                    path,
+                    reason,
+                    candidates: serde_json::from_str::<Vec<String>>(&candidates)?
+                        .into_iter()
+                        .map(NodeId::new)
+                        .collect(),
+                })
+            })
+            .collect()
+    }
+
+    /// Loads extractor-relevant fingerprints from the current snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored paths are invalid.
+    pub fn load_current_artifact_fingerprints(
+        &self,
+        workspace: &str,
+    ) -> Result<Vec<ArtifactFingerprint>, StoreError> {
+        self.consistent_read(|| {
+            self.current_snapshot_id(workspace)?;
+            let mut statement = self.connection.prepare(
+                "SELECT
+                    repo_id, checkout_id, path_encoding, relative_path, path_display,
+                    extractor, content_hash, size_bytes
+                 FROM artifact_fingerprints
+                 WHERE workspace_name = ?1
+                 ORDER BY repo_id, checkout_id, path_encoding, relative_path, extractor",
+            )?;
+            let rows = statement
+                .query_map([workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, Vec<u8>>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, String>(5)?,
+                        row.get::<_, String>(6)?,
+                        row.get::<_, i64>(7)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows.into_iter()
+                .map(
+                    |(
+                        repo_id,
+                        checkout_id,
+                        encoding,
+                        bytes,
+                        display,
+                        extractor,
+                        content_hash,
+                        stored_size_bytes,
+                    )| {
+                        Ok(ArtifactFingerprint {
+                            repo_id: RepoId::new(repo_id),
+                            checkout_id: CheckoutId::new(checkout_id),
+                            path: NativePath {
+                                encoding: serde_json::from_str(&encoding)?,
+                                bytes,
+                                display,
+                            },
+                            extractor,
+                            content_hash,
+                            size_bytes: u64::try_from(stored_size_bytes).map_err(|_| {
+                                StoreError::IntegerOutOfRange {
+                                    field: "artifact_fingerprints.size_bytes",
+                                    value: i128::from(stored_size_bytes),
+                                }
+                            })?,
+                        })
+                    },
+                )
+                .collect()
+        })
+    }
+
+    /// Loads reusable source-owned extractor outputs from the current snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored values are invalid.
+    pub fn load_current_extractor_batches(
+        &self,
+        workspace: &str,
+    ) -> Result<Vec<StoredExtractorBatch>, StoreError> {
+        self.load_current_extractor_batches_with_limit(workspace, i64::MAX as u64)
+    }
+
+    /// Loads current extractor batches whose payload fits within `maximum_payload_bytes`.
+    ///
+    /// Oversized rows are omitted before `SQLite` copies their BLOB into the process. Callers can
+    /// consequently treat them as cache misses and recompute them under the active policy.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored values are invalid.
+    pub fn load_current_extractor_batches_with_limit(
+        &self,
+        workspace: &str,
+        maximum_payload_bytes: u64,
+    ) -> Result<Vec<StoredExtractorBatch>, StoreError> {
+        self.load_current_extractor_batches_where(workspace, maximum_payload_bytes, None)
+    }
+
+    /// Loads the current batches that can carry persisted extraction degradations: batches whose
+    /// source was decoded lossily and batches owned by `extractor`.
+    ///
+    /// Oversized rows are omitted exactly as in
+    /// [`Self::load_current_extractor_batches_with_limit`].
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored values are invalid.
+    pub fn load_current_degradation_batches(
+        &self,
+        workspace: &str,
+        maximum_payload_bytes: u64,
+        extractor: &str,
+    ) -> Result<Vec<StoredExtractorBatch>, StoreError> {
+        self.load_current_extractor_batches_where(workspace, maximum_payload_bytes, Some(extractor))
+    }
+
+    fn load_current_extractor_batches_where(
+        &self,
+        workspace: &str,
+        maximum_payload_bytes: u64,
+        degradation_extractor: Option<&str>,
+    ) -> Result<Vec<StoredExtractorBatch>, StoreError> {
+        self.consistent_read(|| {
+            self.current_snapshot_id(workspace)?;
+            let maximum_payload_bytes = i64::try_from(maximum_payload_bytes).unwrap_or(i64::MAX);
+            let mut statement = self.connection.prepare(
+                "SELECT
+                    repo_id, checkout_id, path_encoding, relative_path, path_display,
+                    extractor, content_hash, size_bytes, extractor_version, budget_fingerprint,
+                    source_was_lossy, output_count, payload
+                 FROM extractor_batches
+                 WHERE workspace_name = ?1 AND length(payload) <= ?2
+                   AND (?3 IS NULL OR source_was_lossy = 1 OR extractor = ?3)
+                 ORDER BY repo_id, checkout_id, path_encoding, relative_path, extractor",
+            )?;
+            let rows = statement
+                .query_map(
+                    params![workspace, maximum_payload_bytes, degradation_extractor],
+                    |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, String>(1)?,
+                            row.get::<_, String>(2)?,
+                            row.get::<_, Vec<u8>>(3)?,
+                            row.get::<_, String>(4)?,
+                            row.get::<_, String>(5)?,
+                            row.get::<_, String>(6)?,
+                            row.get::<_, i64>(7)?,
+                            row.get::<_, String>(8)?,
+                            row.get::<_, String>(9)?,
+                            row.get::<_, bool>(10)?,
+                            row.get::<_, i64>(11)?,
+                            row.get::<_, Vec<u8>>(12)?,
+                        ))
+                    },
+                )?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows.into_iter()
+                .map(
+                    |(
+                        repo_id,
+                        checkout_id,
+                        encoding,
+                        bytes,
+                        display,
+                        extractor,
+                        content_hash,
+                        stored_size_bytes,
+                        extractor_version,
+                        budget_fingerprint,
+                        source_was_lossy,
+                        stored_output_count,
+                        payload,
+                    )| {
+                        Ok(StoredExtractorBatch {
+                            source: ArtifactFingerprint {
+                                repo_id: RepoId::new(repo_id),
+                                checkout_id: CheckoutId::new(checkout_id),
+                                path: NativePath {
+                                    encoding: serde_json::from_str(&encoding)?,
+                                    bytes,
+                                    display,
+                                },
+                                extractor,
+                                content_hash,
+                                size_bytes: stored_metric_to_u64(
+                                    "extractor_batches.size_bytes",
+                                    stored_size_bytes,
+                                )?,
+                            },
+                            extractor_version,
+                            budget_fingerprint,
+                            source_was_lossy,
+                            output_count: stored_metric_to_u64(
+                                "extractor_batches.output_count",
+                                stored_output_count,
+                            )?,
+                            payload,
+                        })
+                    },
+                )
+                .collect()
+        })
+    }
+
+    /// Loads extractor run metrics from the current snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or run metrics are invalid.
+    pub fn load_current_extractor_runs(
+        &self,
+        workspace: &str,
+    ) -> Result<Vec<ExtractorRun>, StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            let mut statement = self.connection.prepare(
+                "SELECT
+                    id, repo_id, checkout_id, extractor, extractor_version, status,
+                    discovered_files, parsed_files, skipped_files, elapsed_ms
+                 FROM extractor_runs
+                 WHERE workspace_name = ?1
+                 ORDER BY repo_id, checkout_id, extractor, id",
+            )?;
+            let rows = statement
+                .query_map([workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, String>(5)?,
+                        row.get::<_, i64>(6)?,
+                        row.get::<_, i64>(7)?,
+                        row.get::<_, i64>(8)?,
+                        row.get::<_, i64>(9)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows.into_iter()
+                .map(
+                    |(
+                        id,
+                        repo_id,
+                        checkout_id,
+                        extractor,
+                        extractor_version,
+                        status,
+                        discovered_files,
+                        parsed_files,
+                        skipped_files,
+                        elapsed_ms,
+                    )| {
+                        Ok(ExtractorRun {
+                            id,
+                            snapshot_id: snapshot_id.clone(),
+                            repo_id: RepoId::new(repo_id),
+                            checkout_id: CheckoutId::new(checkout_id),
+                            extractor,
+                            extractor_version,
+                            status: serde_json::from_str(&status)?,
+                            discovered_files: stored_metric_to_u64(
+                                "extractor_runs.discovered_files",
+                                discovered_files,
+                            )?,
+                            parsed_files: stored_metric_to_u64(
+                                "extractor_runs.parsed_files",
+                                parsed_files,
+                            )?,
+                            skipped_files: stored_metric_to_u64(
+                                "extractor_runs.skipped_files",
+                                skipped_files,
+                            )?,
+                            elapsed_ms: stored_metric_to_u64(
+                                "extractor_runs.elapsed_ms",
+                                elapsed_ms,
+                            )?,
+                        })
+                    },
+                )
+                .collect()
+        })
+    }
+
+    /// Replaces manual link declarations of the current snapshot in a transaction.
+    ///
+    /// Passing an empty slice clears the declarations.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the snapshot or endpoint nodes are absent, metadata is unsafe
+    /// or oversized, records conflict, or the transaction fails.
+    pub fn persist_manual_links(
+        &mut self,
+        snapshot_id: &str,
+        records: &[ManualLinkRecord],
+    ) -> Result<(), StoreError> {
+        validate_manual_links(snapshot_id, records, None)?;
+        let workspace = self.require_snapshot(snapshot_id)?;
+        let transaction = self.connection.transaction()?;
+        for record in records {
+            for (field, node_id) in [
+                ("source", record.source_node_id.as_str()),
+                ("target", record.target_node_id.as_str()),
+            ] {
+                let exists = transaction.query_row(
+                    "SELECT EXISTS(
+                        SELECT 1 FROM nodes WHERE workspace_name = ?1 AND id = ?2
+                     )",
+                    params![workspace, node_id],
+                    |row| row.get::<_, bool>(0),
+                )?;
+                if !exists {
+                    return Err(StoreError::InvalidPersistenceRecord(format!(
+                        "manual link `{}` {field} node `{node_id}` is absent from snapshot \
+                         `{snapshot_id}`",
+                        record.id
+                    )));
+                }
+            }
+        }
+        replace_manual_links(&transaction, &workspace, records)?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    /// Loads manual link declarations of the current snapshot in stable identifier order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::SnapshotMissing`] when the snapshot is absent or another
+    /// [`StoreError`] when persisted rows are malformed.
+    pub fn load_manual_links(
+        &self,
+        snapshot_id: &str,
+    ) -> Result<Vec<ManualLinkRecord>, StoreError> {
+        self.consistent_read(|| {
+            let workspace = self.require_snapshot(snapshot_id)?;
+            let mut statement = self.connection.prepare(
+                "SELECT id, source_node_id, target_node_id, kind, disposition, reason, decision_json,
+                        config_version
+                 FROM manual_links
+                 WHERE workspace_name = ?1
+                 ORDER BY id",
+            )?;
+            let rows = statement
+                .query_map([workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, String>(5)?,
+                        row.get::<_, Vec<u8>>(6)?,
+                        row.get::<_, i64>(7)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            let records = rows
+                .into_iter()
+                .map(
+                    |(id, source, target, kind, disposition, reason, decision_json, config_version)| {
+                        let disposition =
+                            ManualLinkDisposition::from_stored(&disposition).ok_or_else(|| {
+                                malformed_stored_data(
+                                    format!("manual link `{id}` in snapshot `{snapshot_id}`"),
+                                    format!("unknown disposition `{disposition}`"),
+                                )
+                            })?;
+                        let config_version = u32::try_from(config_version).map_err(|_| {
+                            StoreError::IntegerOutOfRange {
+                                field: "manual_links.config_version",
+                                value: i128::from(config_version),
+                            }
+                        })?;
+                        let decision = serde_json::from_slice(&decision_json).map_err(|error| {
+                            malformed_stored_data(
+                                format!("manual link `{id}` decision in snapshot `{snapshot_id}`"),
+                                error.to_string(),
+                            )
+                        })?;
+                        Ok(ManualLinkRecord {
+                            id,
+                            snapshot_id: snapshot_id.to_owned(),
+                            source_node_id: NodeId::new(source),
+                            target_node_id: NodeId::new(target),
+                            kind,
+                            disposition,
+                            reason,
+                            decision,
+                            config_version,
+                        })
+                    },
+                )
+                .collect::<Result<Vec<_>, StoreError>>()?;
+            validate_manual_links(snapshot_id, &records, None).map_err(|error| {
+                malformed_stored_data(
+                    format!("manual links in snapshot `{snapshot_id}`"),
+                    error.to_string(),
+                )
+            })?;
+            Ok(records)
+        })
+    }
+
+    /// Inserts or replaces one source-free provider capability report.
+    ///
+    /// The repository must currently be registered in the selected workspace. Replacement is
+    /// scoped by workspace, repository, provider, and provider version.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] for invalid metadata, an unregistered repository, serialization,
+    /// integer conversion, or constraint failures.
+    pub fn upsert_provider_capabilities(
+        &mut self,
+        record: &ProviderCapabilityRecord,
+    ) -> Result<(), StoreError> {
+        validate_provider_capability_record(record)?;
+        let registered = self.connection.query_row(
+            "SELECT EXISTS(
+                SELECT 1 FROM workspace_repositories
+                WHERE workspace_name = ?1 AND repo_id = ?2
+             )",
+            params![record.workspace_name, record.repo_id.as_str()],
+            |row| row.get::<_, bool>(0),
+        )?;
+        if !registered {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "repository `{}` is not registered in workspace `{}`",
+                record.repo_id.as_str(),
+                record.workspace_name
+            )));
+        }
+        let capabilities_json = serde_json::to_string(&record.capabilities)?;
+        self.connection.execute(
+            "INSERT INTO provider_capabilities(
+                workspace_name, repo_id, provider, provider_version, capabilities_json,
+                observed_at_unix_ms
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(workspace_name, repo_id, provider, provider_version) DO UPDATE SET
+                capabilities_json = excluded.capabilities_json,
+                observed_at_unix_ms = excluded.observed_at_unix_ms",
+            params![
+                record.workspace_name,
+                record.repo_id.as_str(),
+                record.provider,
+                record.provider_version,
+                capabilities_json,
+                metric_to_i64(
+                    "provider_capabilities.observed_at_unix_ms",
+                    record.observed_at_unix_ms
+                )?,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Loads one source-free provider capability report.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when lookup metadata is unsafe or oversized, or persisted data is
+    /// malformed. An unknown scope returns `Ok(None)`.
+    pub fn load_provider_capabilities(
+        &self,
+        workspace: &str,
+        repo_id: &RepoId,
+        provider: &str,
+        provider_version: &str,
+    ) -> Result<Option<ProviderCapabilityRecord>, StoreError> {
+        validate_safe_metadata("workspace name", workspace, 1, MANUAL_LINK_ID_MAX_BYTES)?;
+        validate_safe_metadata(
+            "repository identifier",
+            repo_id.as_str(),
+            1,
+            MANUAL_LINK_ID_MAX_BYTES,
+        )?;
+        validate_safe_metadata("provider name", provider, 1, PROVIDER_COMPONENT_MAX_BYTES)?;
+        validate_safe_metadata(
+            "provider version",
+            provider_version,
+            1,
+            PROVIDER_COMPONENT_MAX_BYTES,
+        )?;
+        let stored = self
+            .connection
+            .query_row(
+                "SELECT capabilities_json, observed_at_unix_ms
+                 FROM provider_capabilities
+                 WHERE workspace_name = ?1
+                   AND repo_id = ?2
+                   AND provider = ?3
+                   AND provider_version = ?4",
+                params![workspace, repo_id.as_str(), provider, provider_version],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)),
+            )
+            .optional()?;
+        let Some((capabilities_json, observed_at_unix_ms)) = stored else {
+            return Ok(None);
+        };
+        let capabilities = serde_json::from_str(&capabilities_json).map_err(|error| {
+            malformed_stored_data(
+                format!(
+                    "provider capabilities `{workspace}/{}/{provider}/{provider_version}`",
+                    repo_id.as_str()
+                ),
+                error.to_string(),
+            )
+        })?;
+        let record = ProviderCapabilityRecord {
+            workspace_name: workspace.to_owned(),
+            repo_id: repo_id.clone(),
+            provider: provider.to_owned(),
+            provider_version: provider_version.to_owned(),
+            capabilities,
+            observed_at_unix_ms: stored_metric_to_u64(
+                "provider_capabilities.observed_at_unix_ms",
+                observed_at_unix_ms,
+            )?,
+        };
+        validate_provider_capability_record(&record).map_err(|error| {
+            malformed_stored_data("provider capability record", error.to_string())
+        })?;
+        Ok(Some(record))
+    }
+
+    /// Inserts or replaces one bounded query result for an immutable snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when metadata, JSON, timestamps, snapshot ownership, or size bounds
+    /// are invalid.
+    pub fn put_query_cache(&mut self, record: &QueryCacheRecord) -> Result<(), StoreError> {
+        validate_query_cache_record(record)?;
+        let snapshot_exists = self.connection.query_row(
+            "SELECT EXISTS(
+                SELECT 1 FROM repo_snapshots
+                WHERE id = ?1 AND workspace_name = ?2
+             )",
+            params![record.snapshot_id, record.workspace_name],
+            |row| row.get::<_, bool>(0),
+        )?;
+        if !snapshot_exists {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "query cache snapshot `{}` is absent from workspace `{}`",
+                record.snapshot_id, record.workspace_name
+            )));
+        }
+        self.connection.execute(
+            "INSERT INTO query_cache(
+                workspace_name, snapshot_id, input_fingerprint, result_summary_json,
+                stored_at_unix_ms, expires_at_unix_ms
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+             ON CONFLICT(workspace_name, snapshot_id, input_fingerprint) DO UPDATE SET
+                result_summary_json = excluded.result_summary_json,
+                stored_at_unix_ms = excluded.stored_at_unix_ms,
+                expires_at_unix_ms = excluded.expires_at_unix_ms",
+            params![
+                record.workspace_name,
+                record.snapshot_id,
+                record.input_fingerprint,
+                record.result_summary_json,
+                metric_to_i64("query_cache.stored_at_unix_ms", record.stored_at_unix_ms)?,
+                record
+                    .expires_at_unix_ms
+                    .map(|value| metric_to_i64("query_cache.expires_at_unix_ms", value))
+                    .transpose()?,
+            ],
+        )?;
+        Ok(())
+    }
+
+    /// Loads one unexpired cached query result for an exact immutable-snapshot fingerprint.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when lookup metadata or persisted cache data is malformed.
+    pub fn load_query_cache(
+        &self,
+        workspace: &str,
+        snapshot_id: &str,
+        input_fingerprint: &str,
+        now_unix_ms: u64,
+    ) -> Result<Option<QueryCacheRecord>, StoreError> {
+        validate_safe_metadata("workspace name", workspace, 1, MANUAL_LINK_ID_MAX_BYTES)?;
+        validate_safe_metadata(
+            "snapshot identifier",
+            snapshot_id,
+            1,
+            MANUAL_LINK_ID_MAX_BYTES,
+        )?;
+        validate_safe_metadata(
+            "query cache input fingerprint",
+            input_fingerprint,
+            1,
+            QUERY_CACHE_FINGERPRINT_MAX_BYTES,
+        )?;
+        let stored = self
+            .connection
+            .query_row(
+                "SELECT result_summary_json, stored_at_unix_ms, expires_at_unix_ms
+                 FROM query_cache
+                 WHERE workspace_name = ?1
+                   AND snapshot_id = ?2
+                   AND input_fingerprint = ?3
+                   AND (expires_at_unix_ms IS NULL OR expires_at_unix_ms >= ?4)",
+                params![
+                    workspace,
+                    snapshot_id,
+                    input_fingerprint,
+                    metric_to_i64("query_cache.now_unix_ms", now_unix_ms)?
+                ],
+                |row| {
+                    Ok((
+                        row.get::<_, Vec<u8>>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, Option<i64>>(2)?,
+                    ))
+                },
+            )
+            .optional()?;
+        let Some((result_summary_json, stored_at_unix_ms, expires_at_unix_ms)) = stored else {
+            return Ok(None);
+        };
+        let record = QueryCacheRecord {
+            workspace_name: workspace.to_owned(),
+            snapshot_id: snapshot_id.to_owned(),
+            input_fingerprint: input_fingerprint.to_owned(),
+            result_summary_json,
+            stored_at_unix_ms: stored_metric_to_u64(
+                "query_cache.stored_at_unix_ms",
+                stored_at_unix_ms,
+            )?,
+            expires_at_unix_ms: expires_at_unix_ms
+                .map(|value| stored_metric_to_u64("query_cache.expires_at_unix_ms", value))
+                .transpose()?,
+        };
+        validate_query_cache_record(&record)
+            .map_err(|error| malformed_stored_data("query cache record", error.to_string()))?;
+        Ok(Some(record))
+    }
+
+    /// Deletes every cached query result for one workspace.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the delete cannot be completed.
+    pub fn clear_query_cache(&mut self, workspace: &str) -> Result<usize, StoreError> {
+        Ok(self.connection.execute(
+            "DELETE FROM query_cache WHERE workspace_name = ?1",
+            [workspace],
+        )?)
+    }
+
+    /// Loads counts and identity for the current snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or counts cannot be read.
+    pub fn current_snapshot_summary(
+        &self,
+        workspace: &str,
+    ) -> Result<StoredSnapshotSummary, StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            let (node_count, edge_count, evidence_count) = self.connection.query_row(
+                "SELECT
+                    (SELECT COUNT(*) FROM nodes WHERE workspace_name = ?1),
+                    (SELECT COUNT(*) FROM edges WHERE workspace_name = ?1),
+                    (SELECT COUNT(*) FROM evidence WHERE workspace_name = ?1)",
+                [workspace],
+                |row| {
+                    Ok((
+                        row.get::<_, i64>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, i64>(2)?,
+                    ))
+                },
+            )?;
+            Ok(StoredSnapshotSummary {
+                snapshot_id,
+                node_count: count_to_usize("nodes", node_count)?,
+                edge_count: count_to_usize("edges", edge_count)?,
+                evidence_count: count_to_usize("evidence", evidence_count)?,
+            })
+        })
+    }
+
+    /// Atomically replaces the current workspace snapshot.
+    ///
+    /// The candidate is invisible as current until all nodes, evidence, edges, and evidence
+    /// references are committed successfully.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] on community validation, constraint, serialization, or transaction
+    /// failure.
+    pub fn publish_snapshot(&mut self, batch: SnapshotBatch<'_>) -> Result<(), StoreError> {
+        self.publish_snapshot_with_progress(batch, |_| {})
+    }
+
+    /// Publishes one atomic snapshot while reporting each completed durable row insertion.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] under the same conditions as [`Self::publish_snapshot`].
+    pub fn publish_snapshot_with_progress<F>(
+        &mut self,
+        batch: SnapshotBatch<'_>,
+        progress: F,
+    ) -> Result<(), StoreError>
+    where
+        F: FnMut(u64),
+    {
+        self.publish_snapshot_with_progress_and_coverage(
+            batch,
+            None,
+            &[],
+            &HttpLinkReport::default(),
+            progress,
+        )
+    }
+
+    /// Publishes one atomic snapshot with repository-scoped coverage gaps and the HTTP link
+    /// coverage of its graph.
+    ///
+    /// With `artifact_delta`, only the listed artifact rows are written; without it, every
+    /// stored fingerprint and extractor batch is compared with the candidate.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] under the same conditions as [`Self::publish_snapshot`].
+    pub fn publish_snapshot_with_progress_and_coverage<F>(
+        &mut self,
+        batch: SnapshotBatch<'_>,
+        artifact_delta: Option<ArtifactDelta<'_>>,
+        coverage_gaps: &[RepositoryCoverageGap],
+        http_links: &HttpLinkReport,
+        mut progress: F,
+    ) -> Result<(), StoreError>
+    where
+        F: FnMut(u64),
+    {
+        let SnapshotBatch {
+            workspace,
+            snapshot_id,
+            nodes,
+            edges,
+            evidence,
+            fingerprints,
+            extractor_batches,
+            extractor_runs,
+            manual_links,
+            community_snapshot,
+        } = batch;
+        validate_graph_snapshot(nodes, edges, evidence)?;
+        validate_artifact_fingerprints(fingerprints)?;
+        validate_manual_links(snapshot_id, manual_links, Some(nodes))?;
+        validate_community_snapshot(snapshot_id, nodes, community_snapshot)?;
+        let transaction = self.connection.transaction()?;
+        upsert_registry(&transaction, workspace)?;
+        publish_current_graph(
+            &transaction,
+            &PublicationInput {
+                workspace,
+                snapshot_id,
+                nodes,
+                edges,
+                evidence,
+                fingerprints,
+                extractor_batches,
+                artifact_delta,
+                extractor_runs,
+                manual_links,
+                community_snapshot,
+                coverage_gaps,
+                http_links,
+            },
+            &mut progress,
+        )?;
+        transaction.commit()?;
+        Ok(())
+    }
+
+    /// Loads nodes and edges from the current workspace snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current snapshot exists or stored data is invalid.
+    pub fn load_current_graph(
+        &self,
+        workspace: &str,
+    ) -> Result<(Vec<Node>, Vec<Edge>), StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            self.load_graph_snapshot(&snapshot_id)
+        })
+    }
+
+    /// Loads nodes and edges from one immutable graph snapshot.
+    ///
+    /// Rows are returned in stable identifier order.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::SnapshotMissing`] when the snapshot does not exist, or another
+    /// [`StoreError`] when stored rows cannot be decoded.
+    fn load_properties(
+        &self,
+        workspace: &str,
+        entity: &str,
+        id: &str,
+    ) -> Result<code_system_graph_model::Properties, StoreError> {
+        let table = if entity == "node" {
+            "node_properties"
+        } else {
+            "edge_properties"
+        };
+        let json: Option<String> = self
+            .connection
+            .query_row(
+                &format!("SELECT properties_json FROM {table} WHERE workspace_name=?1 AND id=?2"),
+                params![workspace, id],
+                |row| row.get(0),
+            )
+            .optional()?;
+        let properties = json
+            .map(|json| serde_json::from_str(&json))
+            .transpose()?
+            .unwrap_or_default();
+        if !code_system_graph_model::valid_properties(&properties) {
+            return Err(StoreError::InvalidSchema);
+        }
+        Ok(properties)
+    }
+
+    /// Loads a consistent snapshot including version-1 node and edge assertions.
+    ///
+    /// # Errors
+    /// Returns an error for a missing snapshot or malformed stored assertions.
+    pub fn load_graph_snapshot(
+        &self,
+        snapshot_id: &str,
+    ) -> Result<(Vec<Node>, Vec<Edge>), StoreError> {
+        self.consistent_read(|| {
+            let workspace = self.require_snapshot(snapshot_id)?;
+            let mut node_statement = self.connection.prepare(
+                "SELECT id, kind, repo_id, stable_key, label
+                 FROM nodes WHERE workspace_name = ?1 ORDER BY id",
+            )?;
+            let node_rows = node_statement
+                .query_map([&workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            let nodes = node_rows
+                .into_iter()
+                .map(|(id, kind, repo_id, stable_key, label)| {
+                    Ok(Node {
+                        properties: self.load_properties(&workspace, "node", &id)?,
+                        id: NodeId::new(id),
+                        kind: serde_json::from_str::<NodeKind>(&kind)?,
+                        repo_id: repo_id.map(RepoId::new),
+                        stable_key,
+                        label,
+                    })
+                })
+                .collect::<Result<Vec<_>, StoreError>>()?;
+
+            let mut edge_statement = self.connection.prepare(
+                "SELECT id, source_node_id, target_node_id, kind, confidence, epistemic_status
+                 FROM edges WHERE workspace_name = ?1 ORDER BY id",
+            )?;
+            let edge_rows = edge_statement
+                .query_map([&workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, String>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, f32>(4)?,
+                        row.get::<_, String>(5)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            let mut evidence_statement = self.connection.prepare(
+                "SELECT edge_id, evidence_id FROM edge_evidence
+                 WHERE workspace_name = ?1 ORDER BY edge_id, evidence_id",
+            )?;
+            let mut evidence_by_edge = BTreeMap::<String, Vec<EvidenceId>>::new();
+            for result in evidence_statement.query_map([&workspace], |row| {
+                Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+            })? {
+                let (edge_id, evidence_id) = result?;
+                evidence_by_edge
+                    .entry(edge_id)
+                    .or_default()
+                    .push(EvidenceId::new(evidence_id));
+            }
+            let mut edges = Vec::with_capacity(edge_rows.len());
+            for (id, source, target, kind, confidence, status) in edge_rows {
+                let evidence = evidence_by_edge.remove(&id).unwrap_or_default();
+                edges.push(Edge {
+                    properties: self.load_properties(&workspace, "edge", &id)?,
+                    id: EdgeId::new(id),
+                    source: NodeId::new(source),
+                    target: NodeId::new(target),
+                    kind: serde_json::from_str::<EdgeKind>(&kind)?,
+                    confidence,
+                    status: serde_json::from_str::<EpistemicStatus>(&status)?,
+                    evidence,
+                });
+            }
+            Ok((nodes, edges))
+        })
+    }
+
+    /// Loads a bounded, ordered page of current nodes for exact kinds and returns the exact total.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the current snapshot is absent, bounds overflow, or stored node
+    /// kinds are malformed.
+    pub fn load_current_nodes_by_kinds(
+        &self,
+        workspace: &str,
+        kinds: &[NodeKind],
+        limit: usize,
+    ) -> Result<(usize, Vec<Node>), StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            self.load_nodes_by_kinds_snapshot(&snapshot_id, kinds, limit)
+        })
+    }
+
+    /// Loads a bounded, ordered page of nodes for exact kinds from one immutable snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the snapshot is absent, bounds overflow, or stored kinds are
+    /// malformed.
+    pub fn load_nodes_by_kinds_snapshot(
+        &self,
+        snapshot_id: &str,
+        kinds: &[NodeKind],
+        limit: usize,
+    ) -> Result<(usize, Vec<Node>), StoreError> {
+        self.consistent_read(|| {
+            if kinds.is_empty() || limit == 0 {
+                return Ok((0, Vec::new()));
+            }
+            let workspace = self.require_snapshot(snapshot_id)?;
+            let kind_values = kinds
+                .iter()
+                .map(serde_json::to_string)
+                .collect::<Result<Vec<_>, _>>()?;
+            let placeholders = (2..=kind_values.len() + 1)
+                .map(|index| format!("?{index}"))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let mut parameters =
+                Vec::<rusqlite::types::Value>::with_capacity(kind_values.len() + 2);
+            parameters.push(workspace.clone().into());
+            parameters.extend(kind_values.into_iter().map(rusqlite::types::Value::Text));
+            let count_sql = format!(
+                "SELECT COUNT(*) FROM nodes WHERE workspace_name = ?1 AND kind IN ({placeholders})"
+            );
+            let count = self.connection.query_row(
+                &count_sql,
+                rusqlite::params_from_iter(parameters.iter()),
+                |row| row.get::<_, i64>(0),
+            )?;
+            let total = count_to_usize("nodes", count)?;
+            let limit = i64::try_from(limit).map_err(|_| StoreError::IntegerOutOfRange {
+                field: "nodes.limit",
+                value: i128::try_from(limit).unwrap_or(i128::MAX),
+            })?;
+            let limit_parameter = parameters.len() + 1;
+            parameters.push(rusqlite::types::Value::Integer(limit));
+            let select_sql = format!(
+                "SELECT id, kind, repo_id, stable_key, label FROM nodes
+                 WHERE workspace_name = ?1 AND kind IN ({placeholders})
+                 ORDER BY id LIMIT ?{limit_parameter}"
+            );
+            let mut statement = self.connection.prepare(&select_sql)?;
+            let rows = statement
+                .query_map(rusqlite::params_from_iter(parameters.iter()), |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            let nodes = rows
+                .into_iter()
+                .map(|(id, kind, repo_id, stable_key, label)| {
+                    Ok(Node {
+                        properties: self.load_properties(&workspace, "node", &id)?,
+                        id: NodeId::new(id),
+                        kind: serde_json::from_str::<NodeKind>(&kind)?,
+                        repo_id: repo_id.map(RepoId::new),
+                        stable_key,
+                        label,
+                    })
+                })
+                .collect::<Result<Vec<_>, StoreError>>()?;
+            Ok((total, nodes))
+        })
+    }
+
+    /// Loads evidence metadata for the current workspace snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the current snapshot is absent or stored tags are malformed.
+    pub fn load_current_evidence(&self, workspace: &str) -> Result<Vec<Evidence>, StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            self.load_evidence_snapshot(&snapshot_id)
+        })
+    }
+
+    /// Loads one exact evidence record from the current workspace snapshot without scanning the
+    /// complete evidence table.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the current snapshot is absent or the stored record is malformed.
+    pub fn load_current_evidence_by_id(
+        &self,
+        workspace: &str,
+        evidence_id: &str,
+    ) -> Result<Option<Evidence>, StoreError> {
+        self.consistent_read(|| {
+            self.current_snapshot_id(workspace)?;
+            let row = self
+                .connection
+                .query_row(
+                    "SELECT id, repo_id, file_path, start_line, end_line, extractor, extractor_version,
+                            provenance, confidence, observed_at_commit, content_hash
+                     FROM evidence WHERE workspace_name = ?1 AND id = ?2",
+                    params![workspace, evidence_id],
+                    |row| {
+                        Ok((
+                            row.get::<_, String>(0)?,
+                            row.get::<_, Option<String>>(1)?,
+                            row.get::<_, Option<String>>(2)?,
+                            row.get::<_, Option<u32>>(3)?,
+                            row.get::<_, Option<u32>>(4)?,
+                            row.get::<_, String>(5)?,
+                            row.get::<_, String>(6)?,
+                            row.get::<_, String>(7)?,
+                            row.get::<_, f32>(8)?,
+                            row.get::<_, Option<String>>(9)?,
+                            row.get::<_, Option<String>>(10)?,
+                        ))
+                    },
+                )
+                .optional()?;
+            row.map(
+                |(
+                    id,
+                    repo_id,
+                    file_path,
+                    start_line,
+                    end_line,
+                    extractor,
+                    extractor_version,
+                    provenance,
+                    confidence,
+                    observed_at_commit,
+                    content_hash,
+                )| {
+                    let provenance = serde_json::from_str(&provenance).map_err(|error| {
+                        malformed_stored_data(format!("evidence `{id}`"), error.to_string())
+                    })?;
+                    Ok(Evidence {
+                        id: EvidenceId::new(id),
+                        repo_id: repo_id.map(RepoId::new),
+                        file_path,
+                        start_line,
+                        end_line,
+                        extractor,
+                        extractor_version,
+                        provenance,
+                        confidence,
+                        observed_at_commit,
+                        content_hash,
+                        note: None,
+                    })
+                },
+            )
+            .transpose()
+        })
+    }
+
+    /// Loads evidence metadata for one current graph snapshot.
+    ///
+    /// Evidence notes are not persisted and remain absent in this projection.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::SnapshotMissing`] when the snapshot is absent or
+    /// [`StoreError::MalformedStoredData`] when a stored provenance tag is invalid.
+    pub fn load_evidence_snapshot(&self, snapshot_id: &str) -> Result<Vec<Evidence>, StoreError> {
+        self.consistent_read(|| {
+            let workspace = self.require_snapshot(snapshot_id)?;
+            let mut statement = self.connection.prepare(
+                "SELECT id, repo_id, file_path, start_line, end_line, extractor, extractor_version,
+                        provenance, confidence, observed_at_commit, content_hash
+                 FROM evidence WHERE workspace_name = ?1 ORDER BY id",
+            )?;
+            let rows = statement
+                .query_map([workspace], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, Option<String>>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, Option<u32>>(3)?,
+                        row.get::<_, Option<u32>>(4)?,
+                        row.get::<_, String>(5)?,
+                        row.get::<_, String>(6)?,
+                        row.get::<_, String>(7)?,
+                        row.get::<_, f32>(8)?,
+                        row.get::<_, Option<String>>(9)?,
+                        row.get::<_, Option<String>>(10)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows.into_iter()
+                .map(
+                    |(
+                        id,
+                        repo_id,
+                        file_path,
+                        start_line,
+                        end_line,
+                        extractor,
+                        extractor_version,
+                        provenance,
+                        confidence,
+                        observed_at_commit,
+                        content_hash,
+                    )| {
+                        let provenance = serde_json::from_str(&provenance).map_err(|error| {
+                            malformed_stored_data(format!("evidence `{id}`"), error.to_string())
+                        })?;
+                        Ok(Evidence {
+                            id: EvidenceId::new(id),
+                            repo_id: repo_id.map(RepoId::new),
+                            file_path,
+                            start_line,
+                            end_line,
+                            extractor,
+                            extractor_version,
+                            provenance,
+                            confidence,
+                            observed_at_commit,
+                            content_hash,
+                            note: None,
+                        })
+                    },
+                )
+                .collect()
+        })
+    }
+
+    /// Searches current snapshot node labels and stable keys using bounded FTS5.
+    ///
+    /// User text is converted to a bounded disjunction of quoted lexical terms rather than
+    /// interpreted as raw FTS syntax.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] for empty input, limits outside `1..=100`, invalid stored tags, or
+    /// `SQLite` failures.
+    pub fn search_current_nodes(
+        &self,
+        workspace: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<Node>, StoreError> {
+        if !(1..=100).contains(&limit) {
+            return Err(StoreError::InvalidSearchQuery(
+                "limit must be between 1 and 100".to_owned(),
+            ));
+        }
+        self.search_current_nodes_ranked(workspace, query, limit)
+            .map(|hits| hits.into_iter().map(|hit| hit.node).collect())
+    }
+
+    /// Searches current nodes and includes the native FTS5 relevance score.
+    ///
+    /// The non-empty query is limited to 1,024 UTF-8 bytes, converted to a bounded disjunction of
+    /// quoted lexical terms, and bound as a parameter. The result limit is `1..=500`. Hits are
+    /// ordered by ascending `bm25` score and then stable node identifier.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::InvalidSearchQuery`] for empty input or limits outside `1..=500`.
+    /// Invalid stored node tags or non-finite ranks are rejected as malformed data.
+    pub fn search_current_nodes_ranked(
+        &self,
+        workspace: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<StoredNodeSearchHit>, StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            self.search_snapshot_nodes_ranked(&snapshot_id, query, limit)
+        })
+    }
+
+    /// Searches nodes in one immutable snapshot and includes the native FTS5 relevance score.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::InvalidSearchQuery`] for invalid input or bounds, and a storage error
+    /// when the snapshot is absent or contains malformed rows.
+    pub fn search_snapshot_nodes_ranked(
+        &self,
+        snapshot_id: &str,
+        query: &str,
+        limit: usize,
+    ) -> Result<Vec<StoredNodeSearchHit>, StoreError> {
+        self.consistent_read(|| {
+            let workspace = self.require_snapshot(snapshot_id)?;
+            let query = query.trim();
+            if query.is_empty() {
+                return Err(StoreError::InvalidSearchQuery(
+                    "query must not be empty".to_owned(),
+                ));
+            }
+            if query.len() > NODE_SEARCH_QUERY_MAX_BYTES {
+                return Err(StoreError::InvalidSearchQuery(format!(
+                    "query must not exceed {NODE_SEARCH_QUERY_MAX_BYTES} UTF-8 bytes"
+                )));
+            }
+            if !(1..=500).contains(&limit) {
+                return Err(StoreError::InvalidSearchQuery(
+                    "limit must be between 1 and 500".to_owned(),
+                ));
+            }
+            let phrase = bounded_fts_disjunction(query);
+            let limit = i64::try_from(limit).map_err(|_| StoreError::IntegerOutOfRange {
+                field: "search.limit",
+                value: i128::try_from(limit).unwrap_or(i128::MAX),
+            })?;
+            let mut statement = self.connection.prepare(
+                "SELECT n.id, n.kind, n.repo_id, n.stable_key, n.label, bm25(nodes_fts)
+                 FROM nodes_fts
+                 JOIN nodes n ON n.node_rowid = nodes_fts.rowid
+                 WHERE n.workspace_name = ?1
+                   AND nodes_fts MATCH ?2
+                 ORDER BY bm25(nodes_fts), n.id
+                 LIMIT ?3",
+            )?;
+            let rows = statement
+                .query_map(params![workspace, phrase, limit], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, String>(1)?,
+                        row.get::<_, Option<String>>(2)?,
+                        row.get::<_, String>(3)?,
+                        row.get::<_, String>(4)?,
+                        row.get::<_, f64>(5)?,
+                    ))
+                })?
+                .collect::<Result<Vec<_>, _>>()?;
+            rows.into_iter()
+                .map(|(id, kind, repo_id, stable_key, label, fts_rank)| {
+                    if !fts_rank.is_finite() {
+                        return Err(malformed_stored_data(
+                            format!("FTS hit `{id}`"),
+                            "rank is not finite",
+                        ));
+                    }
+                    let kind = serde_json::from_str(&kind).map_err(|error| {
+                        malformed_stored_data(format!("node `{id}`"), error.to_string())
+                    })?;
+                    Ok(StoredNodeSearchHit {
+                        node: Node {
+                            properties: self.load_properties(&workspace, "node", &id)?,
+                            id: NodeId::new(id),
+                            kind,
+                            repo_id: repo_id.map(RepoId::new),
+                            stable_key,
+                            label,
+                        },
+                        fts_rank,
+                    })
+                })
+                .collect()
+        })
+    }
+
+    /// Returns the current snapshot identifier, or `None` before the first publication.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the query fails.
+    pub fn find_current_snapshot_id(&self, workspace: &str) -> Result<Option<String>, StoreError> {
+        match self.current_snapshot_id(workspace) {
+            Ok(snapshot_id) => Ok(Some(snapshot_id)),
+            Err(StoreError::CurrentSnapshotMissing(_)) => Ok(None),
+            Err(error) => Err(error),
+        }
+    }
+
+    /// Counts the communities of the current snapshot without loading their memberships.
+    ///
+    /// Returns `None` when no current snapshot or community analysis exists.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when the query fails or the count is out of range.
+    pub fn current_community_count(&self, workspace: &str) -> Result<Option<usize>, StoreError> {
+        self.consistent_read(|| {
+            let Some(snapshot_id) = self.find_current_snapshot_id(workspace)? else {
+                return Ok(None);
+            };
+            let count = self
+                .connection
+                .query_row(
+                    "SELECT (SELECT COUNT(*) FROM communities WHERE snapshot_id = ?1)
+                     FROM community_snapshots WHERE snapshot_id = ?1",
+                    [&snapshot_id],
+                    |row| row.get::<_, i64>(0),
+                )
+                .optional()?;
+            count
+                .map(|count| {
+                    usize::try_from(count).map_err(|_| StoreError::IntegerOutOfRange {
+                        field: "communities.count",
+                        value: i128::from(count),
+                    })
+                })
+                .transpose()
+        })
+    }
+
+    /// Loads the community analysis associated with the current workspace snapshot.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when no current graph snapshot or community analysis exists, or when
+    /// persisted rows are malformed.
+    pub fn load_current_community_snapshot(
+        &self,
+        workspace: &str,
+    ) -> Result<CommunitySnapshot, StoreError> {
+        self.consistent_read(|| {
+            let snapshot_id = self.current_snapshot_id(workspace)?;
+            self.load_community_snapshot(&snapshot_id)
+        })
+    }
+
+    /// Loads one retained community analysis in deterministic identifier order.
+    ///
+    /// The analyses of the current and the previous snapshot of each workspace are retained.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::SnapshotMissing`] when neither a graph nor an analysis exists for the
+    /// snapshot, [`StoreError::CommunitySnapshotMissing`] when the current graph has no analysis,
+    /// or [`StoreError::MalformedStoredData`] when persisted rows violate domain invariants.
+    pub fn load_community_snapshot(
+        &self,
+        snapshot_id: &str,
+    ) -> Result<CommunitySnapshot, StoreError> {
+        self.consistent_read(|| {
+            let retained = self
+                .connection
+                .query_row(
+                    "SELECT 1 FROM community_snapshots WHERE snapshot_id = ?1",
+                    [snapshot_id],
+                    |_| Ok(()),
+                )
+                .optional()?;
+            if retained.is_none() {
+                self.require_snapshot(snapshot_id)?;
+            }
+            load_community_snapshot(&self.connection, snapshot_id)
+        })
+    }
+
+    /// Loads a retained community analysis only when it belongs to the requested workspace.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError::SnapshotMissing`] when the analysis is absent or belongs to another
+    /// workspace, preserving workspace isolation at read-only delivery boundaries.
+    pub fn load_workspace_community_snapshot(
+        &self,
+        workspace: &str,
+        snapshot_id: &str,
+    ) -> Result<CommunitySnapshot, StoreError> {
+        let belongs = self
+            .connection
+            .query_row(
+                "SELECT 1 FROM community_snapshots WHERE snapshot_id = ?1 AND workspace_name = ?2",
+                params![snapshot_id, workspace],
+                |_| Ok(()),
+            )
+            .optional()?;
+        belongs.ok_or_else(|| StoreError::SnapshotMissing(snapshot_id.to_owned()))?;
+        load_community_snapshot(&self.connection, snapshot_id)
+    }
+
+    /// Runs related reads in one deferred transaction so they observe the same publication.
+    ///
+    /// Include snapshot selection and all dependent reads in the callback: a concurrent writer
+    /// can replace the current snapshot after this transaction ends. Nested calls reuse the
+    /// existing transaction. The callback must only perform reads on this connection.
+    ///
+    /// # Errors
+    ///
+    /// Returns errors from the callback or transaction setup/commit. A failed callback rolls back
+    /// a transaction started here; an existing transaction remains owned by its caller.
+    pub fn consistent_read<T, E>(&self, read: impl FnOnce() -> Result<T, E>) -> Result<T, E>
+    where
+        E: From<StoreError>,
+    {
+        if !self.connection.is_autocommit() {
+            return read();
+        }
+        let transaction = self
+            .connection
+            .unchecked_transaction()
+            .map_err(StoreError::from)?;
+        let value = read()?;
+        transaction.commit().map_err(StoreError::from)?;
+        Ok(value)
+    }
+
+    fn current_snapshot_id(&self, workspace: &str) -> Result<String, StoreError> {
+        self.connection
+            .query_row(
+                "SELECT id FROM repo_snapshots WHERE workspace_name = ?1",
+                [workspace],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or_else(|| StoreError::CurrentSnapshotMissing(workspace.to_owned()))
+    }
+
+    /// Resolves a current snapshot identifier to the workspace that owns it.
+    fn require_snapshot(&self, snapshot_id: &str) -> Result<String, StoreError> {
+        self.connection
+            .query_row(
+                "SELECT workspace_name FROM repo_snapshots WHERE id = ?1",
+                [snapshot_id],
+                |row| row.get::<_, String>(0),
+            )
+            .optional()?
+            .ok_or_else(|| StoreError::SnapshotMissing(snapshot_id.to_owned()))
+    }
+
+    /// Runs `SQLite`'s quick integrity check.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] if `SQLite` cannot perform the check.
+    pub fn integrity_check(&self) -> Result<bool, StoreError> {
+        let result = self
+            .connection
+            .query_row("PRAGMA quick_check", [], |row| row.get::<_, String>(0))?;
+        if result != "ok" || self.schema_id()? != schema_identity() {
+            return Ok(false);
+        }
+        let foreign_key_violation = self
+            .connection
+            .query_row(
+                "SELECT 1 FROM pragma_foreign_key_check LIMIT 1",
+                [],
+                |row| row.get::<_, i64>(0),
+            )
+            .optional()?;
+        Ok(foreign_key_violation.is_none())
+    }
+
+    /// Observes `SQLite` safety and indexing capabilities without modifying the store.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`StoreError`] when `SQLite` cannot provide the requested diagnostics.
+    pub fn diagnostics(&self) -> Result<StoreDiagnostics, StoreError> {
+        let journal_mode = self
+            .connection
+            .query_row("PRAGMA journal_mode", [], |row| row.get::<_, String>(0))?;
+        let foreign_keys_enabled = self
+            .connection
+            .query_row("PRAGMA foreign_keys", [], |row| row.get::<_, i64>(0))?
+            == 1;
+        let fts5_index_available = self
+            .connection
+            .query_row(
+                "SELECT 1 FROM sqlite_schema
+                 WHERE type = 'table' AND name = 'nodes_fts'",
+                [],
+                |row| row.get::<_, i64>(0),
+            )
+            .optional()?
+            .is_some();
+        Ok(StoreDiagnostics {
+            journal_mode,
+            foreign_keys_enabled,
+            fts5_index_available,
+        })
+    }
+}
+
+fn load_workspace_identity(
+    connection: &Connection,
+    workspace: &str,
+) -> Result<StoredWorkspaceIdentity, StoreError> {
+    let (id, manifest_hash, encoding, bytes, display) = connection
+        .query_row(
+            "SELECT
+                id, manifest_hash, config_path_encoding, config_path, config_path_display
+             FROM workspaces WHERE name = ?1",
+            [workspace],
+            |row| {
+                Ok((
+                    row.get::<_, Option<String>>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, Option<String>>(2)?,
+                    row.get::<_, Option<Vec<u8>>>(3)?,
+                    row.get::<_, Option<String>>(4)?,
+                ))
+            },
+        )
+        .optional()?
+        .ok_or_else(|| StoreError::RegistryIncomplete(workspace.to_owned()))?;
+    Ok(StoredWorkspaceIdentity {
+        id: id.ok_or_else(|| StoreError::RegistryIncomplete(workspace.to_owned()))?,
+        manifest_hash,
+        config_path: decode_optional_path(encoding, bytes, display)?,
+    })
+}
+
+fn load_workspace_repositories(
+    connection: &Connection,
+    workspace: &str,
+) -> Result<Vec<RepositoryRecord>, StoreError> {
+    let mut statement = connection.prepare(
+        "SELECT
+            wr.alias, r.id, c.id, c.path_encoding, c.canonical_path, c.path_display,
+            r.git_common_path_encoding, r.git_common_path, r.git_common_path_display,
+            r.normalized_remote, c.head_commit, c.is_linked_worktree, c.working_tree_dirty
+         FROM workspace_repositories wr
+         JOIN repositories r ON r.id = wr.repo_id
+         JOIN repository_checkouts c ON c.id = wr.checkout_id
+         WHERE wr.workspace_name = ?1
+         ORDER BY wr.alias",
+    )?;
+    let rows = statement
+        .query_map([workspace], |row| {
+            Ok(StoredRepositoryRow {
+                alias: row.get(0)?,
+                repo_id: row.get(1)?,
+                checkout_id: row.get(2)?,
+                path_encoding: row.get(3)?,
+                path_bytes: row.get(4)?,
+                path_display: row.get(5)?,
+                common_encoding: row.get(6)?,
+                common_bytes: row.get(7)?,
+                common_display: row.get(8)?,
+                normalized_remote: row.get(9)?,
+                head_commit: row.get(10)?,
+                is_linked_worktree: row.get::<_, i64>(11)? != 0,
+                working_tree_dirty: row.get::<_, i64>(12)? != 0,
+            })
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    rows.into_iter().map(repository_from_row).collect()
+}
+
+fn repository_from_row(row: StoredRepositoryRow) -> Result<RepositoryRecord, StoreError> {
+    Ok(RepositoryRecord {
+        id: RepoId::new(row.repo_id),
+        checkout_id: CheckoutId::new(row.checkout_id),
+        alias: row.alias,
+        canonical_path: NativePath {
+            encoding: serde_json::from_str(&row.path_encoding)?,
+            bytes: row.path_bytes,
+            display: row.path_display,
+        },
+        git_common_dir: decode_optional_path(
+            row.common_encoding,
+            row.common_bytes,
+            row.common_display,
+        )?,
+        normalized_remote: row.normalized_remote,
+        head_commit: row.head_commit,
+        is_linked_worktree: row.is_linked_worktree,
+        working_tree_dirty: row.working_tree_dirty,
+    })
+}
+
+fn decode_optional_path(
+    encoding: Option<String>,
+    bytes: Option<Vec<u8>>,
+    display: Option<String>,
+) -> Result<Option<NativePath>, StoreError> {
+    match (encoding, bytes, display) {
+        (Some(encoding), Some(bytes), Some(display)) => Ok(Some(NativePath {
+            encoding: serde_json::from_str(&encoding)?,
+            bytes,
+            display,
+        })),
+        _ => Ok(None),
+    }
+}
+
+fn open_exact(path: &Path) -> Result<Connection, StoreError> {
+    prepare_database_file(path)?;
+    let mut connection = Connection::open_with_flags(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_WRITE
+            | OpenFlags::SQLITE_OPEN_CREATE
+            | OpenFlags::SQLITE_OPEN_NO_MUTEX
+            | OpenFlags::SQLITE_OPEN_NOFOLLOW,
+    )?;
+    configure_connection(&connection)?;
+    if database_is_empty(&connection)? {
+        initialize_empty_schema(&mut connection)?;
+    }
+    restrict_store_permissions(path)?;
+    validate_exact_schema(&connection)?;
+    Ok(connection)
+}
+
+fn open_read_only_connection(
+    path: &Path,
+    configure: impl Fn(&Connection) -> Result<(), StoreError>,
+) -> Result<Connection, StoreError> {
+    let path = fs::canonicalize(path).map_err(|source| StoreError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    let flags = OpenFlags::SQLITE_OPEN_READ_ONLY
+        | OpenFlags::SQLITE_OPEN_NO_MUTEX
+        | OpenFlags::SQLITE_OPEN_NOFOLLOW;
+    let connection = Connection::open_with_flags(&path, flags)?;
+    match configure(&connection) {
+        Ok(()) => Ok(connection),
+        Err(error) if is_read_only_directory_error(&error) => {
+            drop(connection);
+            if immutable_fallback_has_sidecars(&path)? {
+                return Err(error);
+            }
+            let uri = immutable_database_uri(&path)?;
+            let connection = Connection::open_with_flags(uri, flags | OpenFlags::SQLITE_OPEN_URI)?;
+            configure(&connection)?;
+            Ok(connection)
+        }
+        Err(error) => Err(error),
+    }
+}
+
+fn is_read_only_directory_error(error: &StoreError) -> bool {
+    matches!(
+        error,
+        StoreError::Sqlite(rusqlite::Error::SqliteFailure(details, _))
+            if details.extended_code == rusqlite::ffi::SQLITE_READONLY_DIRECTORY
+    )
+}
+
+fn immutable_fallback_has_sidecars(path: &Path) -> Result<bool, StoreError> {
+    for suffix in &SQLITE_ARTIFACT_SUFFIXES[1..] {
+        let sidecar = artifact_path(path, suffix);
+        match fs::symlink_metadata(&sidecar) {
+            Ok(_) => return Ok(true),
+            Err(source) if source.kind() == std::io::ErrorKind::NotFound => {}
+            Err(source) => {
+                return Err(StoreError::Io {
+                    path: sidecar,
+                    source,
+                });
+            }
+        }
+    }
+    Ok(false)
+}
+
+#[expect(
+    clippy::unnecessary_wraps,
+    reason = "non-Unix database paths can be non-Unicode"
+)]
+fn immutable_database_uri(path: &Path) -> Result<String, StoreError> {
+    const HEX: &[u8; 16] = b"0123456789ABCDEF";
+
+    #[cfg(unix)]
+    let bytes = {
+        use std::os::unix::ffi::OsStrExt;
+
+        path.as_os_str().as_bytes()
+    };
+    #[cfg(not(unix))]
+    let bytes = path
+        .to_str()
+        .ok_or_else(|| StoreError::Io {
+            path: path.to_path_buf(),
+            source: std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "database path is not valid Unicode",
+            ),
+        })?
+        .as_bytes();
+
+    let mut uri = String::with_capacity(bytes.len() + 24);
+    uri.push_str("file:");
+    for &byte in bytes {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
+            uri.push(char::from(byte));
+        } else {
+            uri.push('%');
+            uri.push(char::from(HEX[usize::from(byte >> 4)]));
+            uri.push(char::from(HEX[usize::from(byte & 0x0f)]));
+        }
+    }
+    uri.push_str("?immutable=1");
+    Ok(uri)
+}
+
+fn configure_connection(connection: &Connection) -> Result<(), StoreError> {
+    connection.pragma_update(None, "foreign_keys", true)?;
+    connection.pragma_update(None, "journal_mode", "WAL")?;
+    connection.busy_timeout(Duration::from_secs(5))?;
+    Ok(())
+}
+
+fn database_is_empty(connection: &Connection) -> Result<bool, StoreError> {
+    let tables = connection.query_row(
+        "SELECT COUNT(*) FROM sqlite_master
+         WHERE type = 'table' AND name NOT LIKE 'sqlite_%'",
+        [],
+        |row| row.get::<_, i64>(0),
+    )?;
+    Ok(tables == 0)
+}
+
+fn validate_artifact_fingerprints(fingerprints: &[ArtifactFingerprint]) -> Result<(), StoreError> {
+    const MAX_PATH_DISPLAY_BYTES: usize = 4 * 1024;
+
+    for fingerprint in fingerprints {
+        validate_safe_metadata(
+            "artifact path display",
+            &fingerprint.path.display,
+            1,
+            MAX_PATH_DISPLAY_BYTES,
+        )?;
+        validate_safe_metadata("extractor", &fingerprint.extractor, 1, 256)?;
+        validate_safe_metadata("artifact content hash", &fingerprint.content_hash, 1, 128)?;
+    }
+    Ok(())
+}
+
+fn validate_graph_snapshot(
+    nodes: &[Node],
+    edges: &[Edge],
+    evidence: &[Evidence],
+) -> Result<(), StoreError> {
+    const MAX_METADATA_BYTES: usize = 64 * 1024;
+
+    let validate_metadata = |field: &str, value: &str| {
+        if value.len() > MAX_METADATA_BYTES {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "{field} exceeds {MAX_METADATA_BYTES} bytes"
+            )));
+        }
+        if contains_unsafe_metadata_characters(value) {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "{field} contains unsafe control or bidirectional characters"
+            )));
+        }
+        Ok(())
+    };
+
+    let mut node_ids = BTreeSet::new();
+    for node in nodes {
+        if !node_ids.insert(node.id.as_str()) {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "duplicate node identifier `{}`",
+                node.id.as_str()
+            )));
+        }
+        validate_metadata("node identifier", node.id.as_str())?;
+        validate_metadata("node stable key", &node.stable_key)?;
+        validate_metadata("node label", &node.label)?;
+    }
+
+    let mut evidence_ids = BTreeSet::new();
+    for item in evidence {
+        if !evidence_ids.insert(item.id.as_str()) {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "duplicate evidence identifier `{}`",
+                item.id.as_str()
+            )));
+        }
+        validate_metadata("evidence identifier", item.id.as_str())?;
+        validate_metadata("evidence extractor", &item.extractor)?;
+        validate_metadata("evidence extractor version", &item.extractor_version)?;
+        for (field, value) in [
+            ("evidence file path", item.file_path.as_deref()),
+            (
+                "evidence observed commit",
+                item.observed_at_commit.as_deref(),
+            ),
+            ("evidence content hash", item.content_hash.as_deref()),
+            ("evidence note", item.note.as_deref()),
+        ] {
+            if let Some(value) = value {
+                validate_metadata(field, value)?;
+            }
+        }
+        if !item.confidence.is_finite() || !(0.0..=1.0).contains(&item.confidence) {
+            return Err(StoreError::InvalidGraphSnapshot(
+                "evidence confidence must be finite and between zero and one".to_owned(),
+            ));
+        }
+        if matches!((item.start_line, item.end_line), (Some(start), Some(end)) if start > end) {
+            return Err(StoreError::InvalidGraphSnapshot(
+                "evidence line range is reversed".to_owned(),
+            ));
+        }
+    }
+
+    let mut edge_ids = BTreeSet::new();
+    for edge in edges {
+        if !edge_ids.insert(edge.id.as_str()) {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "duplicate edge identifier `{}`",
+                edge.id.as_str()
+            )));
+        }
+        validate_metadata("edge identifier", edge.id.as_str())?;
+        if !node_ids.contains(edge.source.as_str()) || !node_ids.contains(edge.target.as_str()) {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "edge `{}` references a missing node",
+                edge.id.as_str()
+            )));
+        }
+        if !edge.confidence.is_finite() || !(0.0..=1.0).contains(&edge.confidence) {
+            return Err(StoreError::InvalidGraphSnapshot(format!(
+                "edge `{}` has invalid confidence",
+                edge.id.as_str()
+            )));
+        }
+        let mut edge_evidence = BTreeSet::new();
+        for evidence_id in &edge.evidence {
+            if !edge_evidence.insert(evidence_id.as_str()) {
+                return Err(StoreError::InvalidGraphSnapshot(format!(
+                    "edge `{}` repeats evidence `{}`",
+                    edge.id.as_str(),
+                    evidence_id.as_str()
+                )));
+            }
+            if !evidence_ids.contains(evidence_id.as_str()) {
+                return Err(StoreError::InvalidGraphSnapshot(format!(
+                    "edge `{}` references missing evidence",
+                    edge.id.as_str()
+                )));
+            }
+        }
+    }
+
+    Ok(())
+}
+
+fn validate_community_snapshot(
+    snapshot_id: &str,
+    nodes: &[Node],
+    community_snapshot: Option<&CommunitySnapshot>,
+) -> Result<(), StoreError> {
+    let Some(community_snapshot) = community_snapshot else {
+        return Ok(());
+    };
+    if community_snapshot.snapshot_id != snapshot_id {
+        return Err(StoreError::CommunitySnapshotMismatch {
+            batch_snapshot_id: snapshot_id.to_owned(),
+            community_snapshot_id: community_snapshot.snapshot_id.clone(),
+        });
+    }
+    let node_ids = nodes
+        .iter()
+        .map(|node| node.id.as_str())
+        .collect::<BTreeSet<_>>();
+    let mut community_ids = BTreeSet::new();
+    for community in &community_snapshot.communities {
+        if !community_ids.insert(community.id.as_str()) {
+            return Err(StoreError::DuplicateCommunityId {
+                snapshot_id: snapshot_id.to_owned(),
+                community_id: community.id.as_str().to_owned(),
+            });
+        }
+        let mut member_ids = BTreeSet::new();
+        for member in &community.members {
+            if !member_ids.insert(member.as_str()) {
+                return Err(StoreError::DuplicateCommunityMembership {
+                    snapshot_id: snapshot_id.to_owned(),
+                    community_id: community.id.as_str().to_owned(),
+                    node_id: member.as_str().to_owned(),
+                });
+            }
+            if !node_ids.contains(member.as_str()) {
+                return Err(StoreError::CommunityMembershipNodeMissing {
+                    snapshot_id: snapshot_id.to_owned(),
+                    community_id: community.id.as_str().to_owned(),
+                    node_id: member.as_str().to_owned(),
+                });
+            }
+        }
+    }
+    Ok(())
+}
+
+fn insert_community_snapshot<F>(
+    transaction: &rusqlite::Transaction<'_>,
+    workspace: &str,
+    snapshot: &CommunitySnapshot,
+    progress: &mut F,
+) -> Result<(), StoreError>
+where
+    F: FnMut(u64),
+{
+    let algorithm = serde_json::to_string(&snapshot.config.algorithm)?;
+    ensure_community_json_bound(
+        "community_snapshots.algorithm",
+        &algorithm,
+        COMMUNITY_ALGORITHM_JSON_MAX_BYTES,
+    )?;
+    let config_json = serde_json::to_string(&snapshot.config)?;
+    ensure_community_json_bound(
+        "community_snapshots.config_json",
+        &config_json,
+        COMMUNITY_CONFIG_JSON_MAX_BYTES,
+    )?;
+    transaction.execute(
+        "INSERT INTO community_snapshots(
+            snapshot_id, workspace_name, engine_version, algorithm, config_json
+         ) VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            snapshot.snapshot_id,
+            workspace,
+            snapshot.engine_version,
+            algorithm,
+            config_json
+        ],
+    )?;
+    progress(1);
+    for community in &snapshot.communities {
+        insert_community(transaction, &snapshot.snapshot_id, community)?;
+        progress(1);
+    }
+    Ok(())
+}
+
+fn insert_community(
+    transaction: &rusqlite::Transaction<'_>,
+    snapshot_id: &str,
+    community: &Community,
+) -> Result<(), StoreError> {
+    let metrics_json = serde_json::to_string(&community.metrics)?;
+    ensure_community_json_bound(
+        "communities.metrics_json",
+        &metrics_json,
+        COMMUNITY_METRICS_JSON_MAX_BYTES,
+    )?;
+    let explanation_json = serde_json::to_string(&serde_json::json!({
+        "central_nodes": &community.central_nodes,
+        "repositories": &community.repositories,
+        "services": &community.services,
+        "inbound_contracts": &community.inbound_contracts,
+        "outbound_contracts": &community.outbound_contracts,
+        "label_evidence": &community.label_evidence,
+        "limitations": &community.limitations,
+    }))?;
+    ensure_community_json_bound(
+        "communities.explanation_json",
+        &explanation_json,
+        COMMUNITY_EXPLANATION_JSON_MAX_BYTES,
+    )?;
+    transaction.execute(
+        "INSERT INTO communities(snapshot_id, id, label, metrics_json, explanation_json)
+         VALUES (?1, ?2, ?3, ?4, ?5)",
+        params![
+            snapshot_id,
+            community.id.as_str(),
+            community.label,
+            metrics_json,
+            explanation_json
+        ],
+    )?;
+    for (member_order, member) in community.members.iter().enumerate() {
+        let member_order =
+            i64::try_from(member_order).map_err(|_| StoreError::IntegerOutOfRange {
+                field: "community_memberships.member_order",
+                value: i128::try_from(member_order).unwrap_or(i128::MAX),
+            })?;
+        transaction.execute(
+            "INSERT INTO community_memberships(
+                snapshot_id, community_id, node_id, member_order
+             ) VALUES (?1, ?2, ?3, ?4)",
+            params![
+                snapshot_id,
+                community.id.as_str(),
+                member.as_str(),
+                member_order
+            ],
+        )?;
+    }
+    Ok(())
+}
+
+fn ensure_community_json_bound(
+    field: &'static str,
+    json: &str,
+    max_bytes: usize,
+) -> Result<(), StoreError> {
+    let actual_bytes = json.len();
+    if actual_bytes > max_bytes {
+        return Err(StoreError::CommunityJsonTooLarge {
+            field,
+            actual_bytes,
+            max_bytes,
+        });
+    }
+    Ok(())
+}
+
+fn load_community_snapshot(
+    connection: &Connection,
+    snapshot_id: &str,
+) -> Result<CommunitySnapshot, StoreError> {
+    let header = connection
+        .query_row(
+            "SELECT engine_version, algorithm, config_json
+             FROM community_snapshots WHERE snapshot_id = ?1",
+            [snapshot_id],
+            |row| {
+                Ok((
+                    row.get::<_, String>(0)?,
+                    row.get::<_, String>(1)?,
+                    row.get::<_, String>(2)?,
+                ))
+            },
+        )
+        .optional()?
+        .ok_or_else(|| StoreError::CommunitySnapshotMissing(snapshot_id.to_owned()))?;
+    let (engine_version, algorithm_json, config_json) = header;
+    ensure_community_json_bound(
+        "community_snapshots.algorithm",
+        &algorithm_json,
+        COMMUNITY_ALGORITHM_JSON_MAX_BYTES,
+    )?;
+    ensure_community_json_bound(
+        "community_snapshots.config_json",
+        &config_json,
+        COMMUNITY_CONFIG_JSON_MAX_BYTES,
+    )?;
+    let algorithm =
+        serde_json::from_str::<CommunityAlgorithm>(&algorithm_json).map_err(|error| {
+            malformed_stored_data(
+                format!("community snapshot `{snapshot_id}` algorithm"),
+                error.to_string(),
+            )
+        })?;
+    let config = serde_json::from_str::<CommunityConfig>(&config_json).map_err(|error| {
+        malformed_stored_data(
+            format!("community snapshot `{snapshot_id}` config"),
+            error.to_string(),
+        )
+    })?;
+    if config.algorithm != algorithm {
+        return Err(malformed_stored_data(
+            format!("community snapshot `{snapshot_id}`"),
+            "algorithm does not match config",
+        ));
+    }
+
+    let mut statement = connection.prepare(
+        "SELECT id, label, metrics_json, explanation_json
+         FROM communities WHERE snapshot_id = ?1 ORDER BY id",
+    )?;
+    let rows = statement
+        .query_map([snapshot_id], |row| {
+            Ok((
+                row.get::<_, String>(0)?,
+                row.get::<_, String>(1)?,
+                row.get::<_, String>(2)?,
+                row.get::<_, String>(3)?,
+            ))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut communities = Vec::with_capacity(rows.len());
+    for (id, label, metrics_json, explanation_json) in rows {
+        communities.push(load_community(
+            connection,
+            snapshot_id,
+            id,
+            label,
+            &metrics_json,
+            &explanation_json,
+        )?);
+    }
+    Ok(CommunitySnapshot {
+        snapshot_id: snapshot_id.to_owned(),
+        engine_version,
+        config,
+        communities,
+    })
+}
+
+fn load_community(
+    connection: &Connection,
+    snapshot_id: &str,
+    id: String,
+    label: String,
+    metrics_json: &str,
+    explanation_json: &str,
+) -> Result<Community, StoreError> {
+    ensure_community_json_bound(
+        "communities.metrics_json",
+        metrics_json,
+        COMMUNITY_METRICS_JSON_MAX_BYTES,
+    )?;
+    ensure_community_json_bound(
+        "communities.explanation_json",
+        explanation_json,
+        COMMUNITY_EXPLANATION_JSON_MAX_BYTES,
+    )?;
+    let entity = format!("community `{id}` in snapshot `{snapshot_id}`");
+    let metrics = serde_json::from_str::<CommunityMetrics>(metrics_json)
+        .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let mut details = serde_json::from_str::<serde_json::Value>(explanation_json)
+        .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let details = details
+        .as_object_mut()
+        .ok_or_else(|| malformed_stored_data(&entity, "explanation JSON must be an object"))?;
+    let central_nodes =
+        serde_json::from_value(remove_json_field(details, "central_nodes", &entity)?)
+            .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let repositories = serde_json::from_value(remove_json_field(details, "repositories", &entity)?)
+        .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let services = serde_json::from_value(remove_json_field(details, "services", &entity)?)
+        .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let inbound_contracts =
+        serde_json::from_value(remove_json_field(details, "inbound_contracts", &entity)?)
+            .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let outbound_contracts =
+        serde_json::from_value(remove_json_field(details, "outbound_contracts", &entity)?)
+            .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let label_evidence =
+        serde_json::from_value(remove_json_field(details, "label_evidence", &entity)?)
+            .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    let limitations = serde_json::from_value(remove_json_field(details, "limitations", &entity)?)
+        .map_err(|error| malformed_stored_data(&entity, error.to_string()))?;
+    if !details.is_empty() {
+        return Err(malformed_stored_data(
+            &entity,
+            "explanation JSON contains unknown fields",
+        ));
+    }
+
+    let members = load_community_members(connection, snapshot_id, &id, &entity)?;
+    if metrics.size != members.len() {
+        return Err(malformed_stored_data(
+            &entity,
+            "metrics size does not match normalized membership count",
+        ));
+    }
+    Ok(Community {
+        id: CommunityId::new(id),
+        label,
+        members,
+        central_nodes,
+        repositories,
+        services,
+        inbound_contracts,
+        outbound_contracts,
+        metrics,
+        label_evidence,
+        limitations,
+    })
+}
+
+fn load_community_members(
+    connection: &Connection,
+    snapshot_id: &str,
+    community_id: &str,
+    entity: &str,
+) -> Result<Vec<NodeId>, StoreError> {
+    let mut statement = connection.prepare(
+        "SELECT node_id, member_order
+         FROM community_memberships
+         WHERE snapshot_id = ?1 AND community_id = ?2
+         ORDER BY member_order, node_id",
+    )?;
+    let rows = statement
+        .query_map(params![snapshot_id, community_id], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+        })?
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut members = Vec::with_capacity(rows.len());
+    for (expected_order, (node_id, stored_order)) in rows.into_iter().enumerate() {
+        let expected_order =
+            i64::try_from(expected_order).map_err(|_| StoreError::IntegerOutOfRange {
+                field: "community_memberships.member_order",
+                value: i128::try_from(expected_order).unwrap_or(i128::MAX),
+            })?;
+        if stored_order != expected_order {
+            return Err(malformed_stored_data(
+                entity,
+                "membership order is not contiguous",
+            ));
+        }
+        members.push(NodeId::new(node_id));
+    }
+    Ok(members)
+}
+
+fn remove_json_field(
+    object: &mut serde_json::Map<String, serde_json::Value>,
+    field: &str,
+    entity: &str,
+) -> Result<serde_json::Value, StoreError> {
+    object
+        .remove(field)
+        .ok_or_else(|| malformed_stored_data(entity, format!("missing JSON field `{field}`")))
+}
+
+fn malformed_stored_data(entity: impl Into<String>, reason: impl Into<String>) -> StoreError {
+    StoreError::MalformedStoredData {
+        entity: entity.into(),
+        reason: reason.into(),
+    }
+}
+
+fn validate_safe_metadata(
+    field: &str,
+    value: &str,
+    min_bytes: usize,
+    max_bytes: usize,
+) -> Result<(), StoreError> {
+    if !(min_bytes..=max_bytes).contains(&value.len()) || value.trim().is_empty() {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "{field} must contain between {min_bytes} and {max_bytes} non-blank UTF-8 bytes"
+        )));
+    }
+    if contains_unsafe_metadata_characters(value) {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "{field} contains unsafe control or bidirectional characters"
+        )));
+    }
+    Ok(())
+}
+
+fn validate_manual_links(
+    snapshot_id: &str,
+    records: &[ManualLinkRecord],
+    nodes: Option<&[Node]>,
+) -> Result<(), StoreError> {
+    validate_safe_metadata(
+        "snapshot identifier",
+        snapshot_id,
+        1,
+        MANUAL_LINK_ID_MAX_BYTES,
+    )?;
+    let node_ids = nodes.map(|nodes| {
+        nodes
+            .iter()
+            .map(|node| node.id.as_str())
+            .collect::<BTreeSet<_>>()
+    });
+    let mut record_ids = BTreeSet::new();
+    let mut declarations = BTreeSet::new();
+    for record in records {
+        if record.snapshot_id != snapshot_id {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "manual link `{}` belongs to snapshot `{}`, not `{snapshot_id}`",
+                record.id, record.snapshot_id
+            )));
+        }
+        validate_safe_metadata(
+            "manual link identifier",
+            &record.id,
+            1,
+            MANUAL_LINK_ID_MAX_BYTES,
+        )?;
+        validate_safe_metadata(
+            "manual link source node",
+            record.source_node_id.as_str(),
+            1,
+            MANUAL_LINK_ID_MAX_BYTES,
+        )?;
+        validate_safe_metadata(
+            "manual link target node",
+            record.target_node_id.as_str(),
+            1,
+            MANUAL_LINK_ID_MAX_BYTES,
+        )?;
+        validate_safe_metadata(
+            "manual link kind",
+            &record.kind,
+            1,
+            MANUAL_LINK_KIND_MAX_BYTES,
+        )?;
+        validate_safe_metadata(
+            "manual link reason",
+            &record.reason,
+            1,
+            MANUAL_LINK_REASON_MAX_BYTES,
+        )?;
+        validate_manual_link_decision(record)?;
+        if !(1..=2_147_483_647).contains(&record.config_version) {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "manual link `{}` config version is outside 1..=2147483647",
+                record.id
+            )));
+        }
+        if !record_ids.insert(record.id.as_str()) {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "manual link identifier `{}` is duplicated in snapshot `{snapshot_id}`",
+                record.id
+            )));
+        }
+        if !declarations.insert((
+            record.source_node_id.as_str(),
+            record.target_node_id.as_str(),
+            record.kind.as_str(),
+        )) {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "manual link endpoints and kind are duplicated in snapshot `{snapshot_id}`"
+            )));
+        }
+        if node_ids.as_ref().is_some_and(|node_ids| {
+            !node_ids.contains(record.source_node_id.as_str())
+                || !node_ids.contains(record.target_node_id.as_str())
+        }) {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "manual link `{}` references a node absent from snapshot `{snapshot_id}`",
+                record.id
+            )));
+        }
+    }
+    Ok(())
+}
+
+fn validate_manual_link_decision(record: &ManualLinkRecord) -> Result<(), StoreError> {
+    let decision_json = serde_json::to_vec(&record.decision)?;
+    if decision_json.len() > MANUAL_LINK_DECISION_JSON_MAX_BYTES {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "manual link `{}` decision exceeds {MANUAL_LINK_DECISION_JSON_MAX_BYTES} bytes",
+            record.id
+        )));
+    }
+    let relation =
+        serde_json::from_value::<EdgeKind>(serde_json::Value::String(record.kind.clone()))
+            .map_err(|error| {
+                StoreError::InvalidPersistenceRecord(format!(
+                    "manual link `{}` kind is invalid: {error}",
+                    record.id
+                ))
+            })?;
+    let expected_status = match record.disposition {
+        ManualLinkDisposition::Active => LinkStatus::Confirmed,
+        ManualLinkDisposition::Suppression => LinkStatus::Suppressed,
+    };
+    if record.decision.source != record.source_node_id
+        || record.decision.target != record.target_node_id
+        || record.decision.relation != relation
+        || record.decision.status != expected_status
+        || record.decision.reasons.first() != Some(&record.reason)
+    {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "manual link `{}` decision does not match its persisted declaration",
+            record.id
+        )));
+    }
+    Ok(())
+}
+
+fn validate_provider_capability_record(
+    record: &ProviderCapabilityRecord,
+) -> Result<(), StoreError> {
+    validate_safe_metadata(
+        "workspace name",
+        &record.workspace_name,
+        1,
+        MANUAL_LINK_ID_MAX_BYTES,
+    )?;
+    validate_safe_metadata(
+        "repository identifier",
+        record.repo_id.as_str(),
+        1,
+        MANUAL_LINK_ID_MAX_BYTES,
+    )?;
+    validate_safe_metadata(
+        "provider name",
+        &record.provider,
+        1,
+        PROVIDER_COMPONENT_MAX_BYTES,
+    )?;
+    validate_safe_metadata(
+        "provider version",
+        &record.provider_version,
+        1,
+        PROVIDER_COMPONENT_MAX_BYTES,
+    )?;
+    if record.capabilities.len() > PROVIDER_CAPABILITY_COUNT_MAX {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "provider capability count exceeds {PROVIDER_CAPABILITY_COUNT_MAX}"
+        )));
+    }
+    let mut capability_names = BTreeSet::new();
+    for capability in &record.capabilities {
+        validate_safe_metadata(
+            "provider capability name",
+            capability,
+            1,
+            PROVIDER_COMPONENT_MAX_BYTES,
+        )?;
+        if !capability_names.insert(capability.as_str()) {
+            return Err(StoreError::InvalidPersistenceRecord(format!(
+                "provider capability `{capability}` is duplicated"
+            )));
+        }
+    }
+    let capabilities_json = serde_json::to_string(&record.capabilities)?;
+    if capabilities_json.len() > PROVIDER_CAPABILITIES_JSON_MAX_BYTES {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "provider capability JSON exceeds {PROVIDER_CAPABILITIES_JSON_MAX_BYTES} bytes"
+        )));
+    }
+    metric_to_i64(
+        "provider_capabilities.observed_at_unix_ms",
+        record.observed_at_unix_ms,
+    )?;
+    Ok(())
+}
+
+fn validate_query_cache_record(record: &QueryCacheRecord) -> Result<(), StoreError> {
+    validate_safe_metadata(
+        "workspace name",
+        &record.workspace_name,
+        1,
+        MANUAL_LINK_ID_MAX_BYTES,
+    )?;
+    validate_safe_metadata(
+        "snapshot identifier",
+        &record.snapshot_id,
+        1,
+        MANUAL_LINK_ID_MAX_BYTES,
+    )?;
+    validate_safe_metadata(
+        "query cache input fingerprint",
+        &record.input_fingerprint,
+        1,
+        QUERY_CACHE_FINGERPRINT_MAX_BYTES,
+    )?;
+    if record.result_summary_json.is_empty()
+        || record.result_summary_json.len() > QUERY_CACHE_RESULT_MAX_BYTES
+        || serde_json::from_slice::<serde_json::Value>(&record.result_summary_json).is_err()
+    {
+        return Err(StoreError::InvalidPersistenceRecord(format!(
+            "query cache result must be valid JSON between 1 and {QUERY_CACHE_RESULT_MAX_BYTES} bytes"
+        )));
+    }
+    if record
+        .expires_at_unix_ms
+        .is_some_and(|expires| expires < record.stored_at_unix_ms)
+    {
+        return Err(StoreError::InvalidPersistenceRecord(
+            "query cache expiry precedes storage timestamp".to_owned(),
+        ));
+    }
+    Ok(())
+}
+
+fn metric_to_i64(field: &'static str, value: u64) -> Result<i64, StoreError> {
+    i64::try_from(value).map_err(|_| StoreError::IntegerOutOfRange {
+        field,
+        value: i128::from(value),
+    })
+}
+
+fn stored_metric_to_u64(field: &'static str, value: i64) -> Result<u64, StoreError> {
+    u64::try_from(value).map_err(|_| StoreError::IntegerOutOfRange {
+        field,
+        value: i128::from(value),
+    })
+}
+
+fn count_to_usize(field: &'static str, value: i64) -> Result<usize, StoreError> {
+    usize::try_from(value).map_err(|_| StoreError::IntegerOutOfRange {
+        field,
+        value: i128::from(value),
+    })
+}
+
+fn initialize_empty_schema(connection: &mut Connection) -> Result<(), StoreError> {
+    let transaction = connection.transaction()?;
+    transaction.execute_batch(INITIAL_SCHEMA)?;
+    transaction.execute(
+        "INSERT INTO schema_metadata(schema_id, instance_id)
+         VALUES (?1, lower(hex(randomblob(32))))",
+        [schema_identity()],
+    )?;
+    transaction.commit()?;
+    Ok(())
+}
+
+fn stored_schema_id(connection: &Connection) -> Result<String, StoreError> {
+    Ok(
+        connection.query_row("SELECT schema_id FROM schema_metadata", [], |row| {
+            row.get(0)
+        })?,
+    )
+}
+
+fn database_instance_id(connection: &Connection) -> Result<String, StoreError> {
+    Ok(connection.query_row(
+        "SELECT instance_id FROM schema_metadata WHERE schema_id = ?1",
+        [schema_identity()],
+        |row| row.get(0),
+    )?)
+}
+
+fn upsert_registry(
+    transaction: &rusqlite::Transaction<'_>,
+    workspace: &WorkspaceRecord,
+) -> Result<(), StoreError> {
+    let config_path_encoding = workspace
+        .config_path
+        .as_ref()
+        .map(|path| serde_json::to_string(&path.encoding))
+        .transpose()?;
+    transaction.execute(
+        "INSERT INTO workspaces(
+            name, manifest_hash, id, config_path_encoding, config_path, config_path_display
+         ) VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+         ON CONFLICT(name) DO UPDATE SET
+             manifest_hash = excluded.manifest_hash,
+             id = excluded.id,
+             config_path_encoding = excluded.config_path_encoding,
+             config_path = excluded.config_path,
+             config_path_display = excluded.config_path_display",
+        params![
+            workspace.name,
+            workspace.manifest_hash,
+            workspace.id.as_str(),
+            config_path_encoding,
+            workspace
+                .config_path
+                .as_ref()
+                .map(|path| path.bytes.as_slice()),
+            workspace
+                .config_path
+                .as_ref()
+                .map(|path| path.display.as_str()),
+        ],
+    )?;
+    transaction.execute(
+        "DELETE FROM workspace_repositories WHERE workspace_name = ?1",
+        [&workspace.name],
+    )?;
+    for repository in &workspace.repositories {
+        let common_encoding = repository
+            .git_common_dir
+            .as_ref()
+            .map(|path| serde_json::to_string(&path.encoding))
+            .transpose()?;
+        transaction.execute(
+            "INSERT INTO repositories(
+                id, normalized_remote, git_common_path_encoding, git_common_path,
+                git_common_path_display
+             ) VALUES (?1, ?2, ?3, ?4, ?5)
+             ON CONFLICT(id) DO UPDATE SET
+                normalized_remote = excluded.normalized_remote,
+                git_common_path_encoding = excluded.git_common_path_encoding,
+                git_common_path = excluded.git_common_path,
+                git_common_path_display = excluded.git_common_path_display",
+            params![
+                repository.id.as_str(),
+                repository.normalized_remote,
+                common_encoding,
+                repository
+                    .git_common_dir
+                    .as_ref()
+                    .map(|path| path.bytes.as_slice()),
+                repository
+                    .git_common_dir
+                    .as_ref()
+                    .map(|path| path.display.as_str()),
+            ],
+        )?;
+        transaction.execute(
+            "INSERT INTO repository_checkouts(
+                id, repo_id, path_encoding, canonical_path, path_display, head_commit,
+                is_linked_worktree, working_tree_dirty
+             ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+             ON CONFLICT(id) DO UPDATE SET
+                repo_id = excluded.repo_id,
+                path_encoding = excluded.path_encoding,
+                canonical_path = excluded.canonical_path,
+                path_display = excluded.path_display,
+                head_commit = excluded.head_commit,
+                is_linked_worktree = excluded.is_linked_worktree,
+                working_tree_dirty = excluded.working_tree_dirty",
+            params![
+                repository.checkout_id.as_str(),
+                repository.id.as_str(),
+                serde_json::to_string(&repository.canonical_path.encoding)?,
+                repository.canonical_path.bytes,
+                repository.canonical_path.display,
+                repository.head_commit,
+                i64::from(repository.is_linked_worktree),
+                i64::from(repository.working_tree_dirty),
+            ],
+        )?;
+        transaction.execute(
+            "INSERT INTO workspace_repositories(workspace_name, alias, repo_id, checkout_id)
+             VALUES (?1, ?2, ?3, ?4)",
+            params![
+                workspace.name,
+                repository.alias,
+                repository.id.as_str(),
+                repository.checkout_id.as_str(),
+            ],
+        )?;
+    }
+    Ok(())
+}
+
+fn lock_path(database_path: &Path) -> PathBuf {
+    let mut path = database_path.to_path_buf();
+    let extension = database_path.extension().map_or_else(
+        || "lock".to_owned(),
+        |value| format!("{}.lock", value.to_string_lossy()),
+    );
+    path.set_extension(extension);
+    path
+}
+
+#[cfg(unix)]
+fn create_lock_file(path: &Path) -> std::io::Result<std::fs::File> {
+    use std::os::unix::fs::OpenOptionsExt;
+
+    OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .mode(0o600)
+        .open(path)
+}
+
+#[cfg(not(unix))]
+fn create_lock_file(path: &Path) -> std::io::Result<std::fs::File> {
+    OpenOptions::new().write(true).create_new(true).open(path)
+}
+
+impl LockMetadata {
+    fn encode(&self) -> String {
+        format!(
+            "version=1\npid={}\nprocess_started_at={}\ntoken={}\n",
+            self.pid, self.process_started_at, self.token
+        )
+    }
+
+    fn decode(content: &str) -> Option<Self> {
+        let mut version = None;
+        let mut pid = None;
+        let mut process_started_at = None;
+        let mut token = None;
+        for line in content.lines() {
+            let (key, value) = line.split_once('=')?;
+            match key {
+                "version" => version = Some(value),
+                "pid" => pid = value.parse().ok(),
+                "process_started_at" => process_started_at = value.parse().ok(),
+                "token" => token = Some(value.to_owned()),
+                _ => return None,
+            }
+        }
+        (version == Some("1") && token.as_ref().is_some_and(|value| !value.is_empty())).then_some(
+            Self {
+                pid: pid?,
+                process_started_at: process_started_at?,
+                token: token?,
+            },
+        )
+    }
+}
+
+fn process_start_time(pid: u32) -> Option<u64> {
+    let pid = Pid::from_u32(pid);
+    let mut system = System::new();
+    system.refresh_processes(ProcessesToUpdate::Some(&[pid]), true);
+    system.process(pid).map(sysinfo::Process::start_time)
+}
+
+fn lock_owner_is_alive(metadata: &LockMetadata) -> bool {
+    process_start_time(metadata.pid).is_some_and(|started_at| {
+        metadata.process_started_at == 0 || metadata.process_started_at == started_at
+    })
+}
+
+fn lock_is_stale(path: &Path, stale_after: Duration) -> Result<bool, StoreError> {
+    let modified = fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .map_err(|source| StoreError::Io {
+            path: path.to_path_buf(),
+            source,
+        })?;
+    let old_enough = SystemTime::now()
+        .duration_since(modified)
+        .is_ok_and(|age| age >= stale_after);
+    if !old_enough {
+        return Ok(false);
+    }
+    let content = fs::read_to_string(path).map_err(|source| StoreError::Io {
+        path: path.to_path_buf(),
+        source,
+    })?;
+    Ok(LockMetadata::decode(&content).is_none_or(|metadata| !lock_owner_is_alive(&metadata)))
+}
+
+#[cfg(test)]
+mod tests {
+    use std::fs;
+    use std::process::Command;
+    use std::time::Duration;
+
+    use code_system_graph_model::{
+        ArtifactFingerprint, CheckoutId, Community, CommunityAlgorithm, CommunityConfig,
+        CommunityId, CommunityMetrics, CommunityScope, CommunitySnapshot, Edge, EdgeId, EdgeKind,
+        EpistemicStatus, Evidence, EvidenceId, ExtractorRun, ExtractorRunStatus, HttpLinkCoverage,
+        HttpLinkGap, HttpLinkGapReason, HttpLinkReport, NativePath, NativePathEncoding, Node,
+        NodeId, NodeKind, Provenance, RepoFreshnessState, RepoId, RepositoryCoverageGap,
+        RepositoryRecord, StoredExtractorBatch, WorkspaceId, WorkspaceRecord,
+    };
+    use rusqlite::params;
+
+    use super::{
+        INITIAL_SCHEMA, ManualLinkDisposition, ManualLinkRecord, ProviderCapabilityRecord,
+        QueryCacheRecord, SnapshotBatch, SqliteStore, StoreError, StoreLock, lock_path,
+    };
+
+    const LOCK_HELPER_ENV: &str = "CODE_SYSTEM_GRAPH_LOCK_HELPER";
+    const LOCK_DATABASE_ENV: &str = "CODE_SYSTEM_GRAPH_LOCK_DATABASE";
+    const LOCK_READY_ENV: &str = "CODE_SYSTEM_GRAPH_LOCK_READY";
+
+    #[test]
+    fn query_progress_handler_should_interrupt_expensive_reads()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let mut store = SqliteStore::open(temporary.path().join("graph.db"))?;
+        store.interrupt_queries_when(|| true)?;
+
+        let result = store.connection.query_row(
+            "WITH RECURSIVE values_(value) AS (\
+             SELECT 1 UNION ALL SELECT value + 1 FROM values_ WHERE value < 1000000) \
+             SELECT sum(value) FROM values_",
+            [],
+            |row| row.get::<_, i64>(0),
+        );
+
+        assert!(result.is_err());
+        Ok(())
+    }
+
+    fn fixture() -> (Vec<Node>, Vec<Edge>, Vec<Evidence>) {
+        let evidence = Evidence {
+            id: EvidenceId::new("evidence:1"),
+            repo_id: Some(RepoId::new("repo:web")),
+            file_path: Some("src/client.ts".to_owned()),
+            start_line: Some(7),
+            end_line: Some(9),
+            extractor: "test".to_owned(),
+            extractor_version: "1.0.0".to_owned(),
+            provenance: Provenance::Extracted,
+            confidence: 1.0,
+            observed_at_commit: Some("0123456789abcdef".to_owned()),
+            content_hash: Some("hash".to_owned()),
+            note: None,
+        };
+        let nodes = vec![
+            Node {
+                properties: code_system_graph_model::Properties::new(),
+                id: NodeId::new("node:web"),
+                kind: NodeKind::HttpOperation,
+                repo_id: Some(RepoId::new("repo:web")),
+                stable_key: "http:web".to_owned(),
+                label: "POST /orders".to_owned(),
+            },
+            Node {
+                properties: code_system_graph_model::Properties::new(),
+                id: NodeId::new("node:api"),
+                kind: NodeKind::HttpOperation,
+                repo_id: Some(RepoId::new("repo:api")),
+                stable_key: "http:api".to_owned(),
+                label: "POST /orders".to_owned(),
+            },
+        ];
+        let edges = vec![Edge {
+            properties: code_system_graph_model::Properties::new(),
+            id: EdgeId::new("edge:1"),
+            source: NodeId::new("node:web"),
+            target: NodeId::new("node:api"),
+            kind: EdgeKind::CallsRemote,
+            confidence: 1.0,
+            status: EpistemicStatus::Confirmed,
+            evidence: vec![evidence.id.clone()],
+        }];
+        (nodes, edges, vec![evidence])
+    }
+
+    fn workspace() -> WorkspaceRecord {
+        WorkspaceRecord {
+            id: WorkspaceId::new("workspace:commerce"),
+            name: "commerce".to_owned(),
+            manifest_hash: "manifest-hash".to_owned(),
+            config_path: Some(NativePath {
+                encoding: NativePathEncoding::Utf8,
+                bytes: b"/workspace/code-system-graph.yaml".to_vec(),
+                display: "/workspace/code-system-graph.yaml".to_owned(),
+            }),
+            repositories: vec![RepositoryRecord {
+                id: RepoId::new("repo:web"),
+                checkout_id: CheckoutId::new("checkout:web"),
+                alias: "web".to_owned(),
+                canonical_path: NativePath {
+                    encoding: NativePathEncoding::Utf8,
+                    bytes: b"/workspace/web".to_vec(),
+                    display: "/workspace/web".to_owned(),
+                },
+                git_common_dir: None,
+                normalized_remote: None,
+                head_commit: Some("abc123".to_owned()),
+                is_linked_worktree: false,
+                working_tree_dirty: false,
+            }],
+        }
+    }
+
+    fn incremental_fixture() -> (ArtifactFingerprint, ExtractorRun) {
+        let fingerprint = ArtifactFingerprint {
+            repo_id: RepoId::new("repo:web"),
+            checkout_id: CheckoutId::new("checkout:web"),
+            path: NativePath {
+                encoding: NativePathEncoding::Utf8,
+                bytes: b"openapi.yaml".to_vec(),
+                display: "openapi.yaml".to_owned(),
+            },
+            extractor: "code-system-graph.http.openapi".to_owned(),
+            content_hash: "content:1".to_owned(),
+            size_bytes: 42,
+        };
+        let run = ExtractorRun {
+            id: "run:1".to_owned(),
+            snapshot_id: "snapshot:1".to_owned(),
+            repo_id: fingerprint.repo_id.clone(),
+            checkout_id: fingerprint.checkout_id.clone(),
+            extractor: fingerprint.extractor.clone(),
+            extractor_version: "0.1.0".to_owned(),
+            status: ExtractorRunStatus::Success,
+            discovered_files: 1,
+            parsed_files: 1,
+            skipped_files: 0,
+            elapsed_ms: 2,
+        };
+        (fingerprint, run)
+    }
+
+    fn manual_link_fixture(snapshot_id: &str) -> Vec<ManualLinkRecord> {
+        vec![
+            ManualLinkRecord {
+                id: "manual-link:active".to_owned(),
+                snapshot_id: snapshot_id.to_owned(),
+                source_node_id: NodeId::new("node:web"),
+                target_node_id: NodeId::new("node:api"),
+                kind: "calls_remote".to_owned(),
+                disposition: ManualLinkDisposition::Active,
+                reason: "Declared by workspace configuration".to_owned(),
+                decision: manual_link_decision(
+                    "node:web",
+                    "node:api",
+                    "confirmed",
+                    "Declared by workspace configuration",
+                ),
+                config_version: 1,
+            },
+            ManualLinkRecord {
+                id: "manual-link:suppression".to_owned(),
+                snapshot_id: snapshot_id.to_owned(),
+                source_node_id: NodeId::new("node:api"),
+                target_node_id: NodeId::new("node:web"),
+                kind: "calls_remote".to_owned(),
+                disposition: ManualLinkDisposition::Suppression,
+                reason: "Known false positive".to_owned(),
+                decision: manual_link_decision(
+                    "node:api",
+                    "node:web",
+                    "suppressed",
+                    "Known false positive",
+                ),
+                config_version: 1,
+            },
+        ]
+    }
+
+    fn manual_link_decision(
+        source: &str,
+        target: &str,
+        status: &str,
+        reason: &str,
+    ) -> code_system_graph_model::LinkDecision {
+        serde_json::from_value(serde_json::json!({
+            "source": source,
+            "target": target,
+            "relation": "calls_remote",
+            "matcher": "manual_exact",
+            "matcher_version": "1.0.0",
+            "score": 1.0,
+            "confidence": 1.0,
+            "reasons": [reason],
+            "rejected_alternatives": [],
+            "evidence": [{
+                "id": format!("evidence:{source}:{target}"),
+                "provenance": "manual"
+            }],
+            "status": status
+        }))
+        .unwrap_or_else(|error| panic!("manual decision fixture must decode: {error}"))
+    }
+
+    fn community_fixture(snapshot_id: &str) -> CommunitySnapshot {
+        CommunitySnapshot {
+            snapshot_id: snapshot_id.to_owned(),
+            engine_version: "1.0.0".to_owned(),
+            config: CommunityConfig {
+                algorithm: CommunityAlgorithm::Louvain,
+                scope: CommunityScope::Federated,
+                seed: 7,
+                resolution: 1.0,
+                minimum_confidence: 0.5,
+                edge_weights: Vec::new(),
+                max_iterations: 20,
+            },
+            communities: vec![Community {
+                id: CommunityId::new("community:orders"),
+                label: "orders".to_owned(),
+                members: vec![NodeId::new("node:api"), NodeId::new("node:web")],
+                central_nodes: vec![NodeId::new("node:api")],
+                repositories: vec![RepoId::new("repo:web")],
+                services: Vec::new(),
+                inbound_contracts: vec![NodeId::new("node:api")],
+                outbound_contracts: vec![NodeId::new("node:web")],
+                metrics: CommunityMetrics {
+                    size: 2,
+                    density: 0.5,
+                    cohesion: 1.0,
+                    coupling: 0.0,
+                    cross_community_edges: 0,
+                },
+                label_evidence: Vec::new(),
+                limitations: vec!["fixture coverage".to_owned()],
+            }],
+        }
+    }
+
+    #[test]
+    fn b2_properties_round_trip_delta_removal_and_failed_publication_are_atomic() {
+        use code_system_graph_model::{PropertyAssertion, PropertyValue};
+        let mut store = SqliteStore::in_memory().expect("store");
+        let workspace = workspace();
+        let (mut nodes, mut edges, evidence) = fixture();
+        let assertion = |value| PropertyAssertion {
+            value: PropertyValue::Boolean(value),
+            source_file: "catalog.json".to_owned(),
+            source_pointer: "/metadata/annotations/allow_write".to_owned(),
+            extractor: "fixture/v1".to_owned(),
+            provenance: Provenance::Declared,
+        };
+        nodes[0]
+            .properties
+            .insert("funnel".to_owned(), assertion(false));
+        edges[0]
+            .properties
+            .insert("allow_write".to_owned(), assertion(false));
+        let publish = |store: &mut SqliteStore, nodes: &[Node], edges: &[Edge], id| {
+            store.publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: id,
+                nodes,
+                edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })
+        };
+        publish(&mut store, &nodes, &edges, "snapshot:first").expect("publish");
+        let (stored_nodes, stored_edges) = store.load_current_graph("commerce").expect("load");
+        assert_eq!(
+            stored_nodes
+                .iter()
+                .find(|n| n.id == nodes[0].id)
+                .expect("node")
+                .properties,
+            nodes[0].properties
+        );
+        assert_eq!(stored_edges[0].properties, edges[0].properties);
+        nodes[0]
+            .properties
+            .insert("funnel".to_owned(), assertion(true));
+        edges[0]
+            .properties
+            .insert("allow_write".to_owned(), assertion(true));
+        publish(&mut store, &nodes, &edges, "snapshot:second").expect("property-only delta");
+        let before = store.load_current_graph("commerce").expect("load delta");
+        assert_eq!(
+            before.1[0].properties["allow_write"].value,
+            PropertyValue::Boolean(true)
+        );
+        edges[0]
+            .properties
+            .get_mut("allow_write")
+            .expect("assertion")
+            .source_file
+            .clear();
+        assert!(publish(&mut store, &nodes, &edges, "snapshot:invalid").is_err());
+        assert_eq!(
+            store.current_snapshot_id("commerce").expect("snapshot"),
+            "snapshot:second"
+        );
+        assert_eq!(
+            store.load_current_graph("commerce").expect("rollback"),
+            before
+        );
+        edges[0].properties.clear();
+        nodes[0].properties.clear();
+        publish(&mut store, &nodes, &edges, "snapshot:removed").expect("remove");
+        let graph = store.load_current_graph("commerce").expect("load removed");
+        assert!(graph.0.iter().all(|n| n.properties.is_empty()));
+        assert!(graph.1.iter().all(|e| e.properties.is_empty()));
+        let integrity: String = store
+            .connection
+            .query_row("PRAGMA integrity_check", [], |r| r.get(0))
+            .expect("integrity");
+        assert_eq!(integrity, "ok");
+        let count: i64 = store
+            .connection
+            .query_row("SELECT count(*) FROM pragma_foreign_key_check", [], |r| {
+                r.get(0)
+            })
+            .expect("FK");
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn publish_snapshot_should_round_trip_current_graph() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let (nodes, edges, evidence) = fixture();
+        let workspace = workspace();
+        let mut published_rows = 0_u64;
+        let result = store
+            .publish_snapshot_with_progress(
+                SnapshotBatch {
+                    workspace: &workspace,
+                    snapshot_id: "snapshot:1",
+                    nodes: &nodes,
+                    edges: &edges,
+                    evidence: &evidence,
+                    fingerprints: &[],
+                    extractor_batches: &[],
+                    extractor_runs: &[],
+                    manual_links: &[],
+                    community_snapshot: None,
+                },
+                |rows| {
+                    published_rows = published_rows
+                        .checked_add(rows)
+                        .expect("bounded fixture progress");
+                },
+            )
+            .and_then(|()| {
+                Ok((
+                    store.load_current_graph("commerce")?,
+                    store.load_current_evidence("commerce")?,
+                ))
+            });
+        let counts = result.map(|((stored_nodes, stored_edges), stored_evidence)| {
+            (
+                stored_nodes.len(),
+                stored_edges.len(),
+                stored_evidence[0].start_line,
+                stored_evidence[0].end_line,
+                stored_evidence[0].extractor_version.clone(),
+                stored_evidence[0].observed_at_commit.clone(),
+            )
+        });
+
+        assert!(matches!(
+            counts,
+            Ok((
+                2,
+                1,
+                Some(7),
+                Some(9),
+                version,
+                Some(commit)
+            )) if version == "1.0.0" && commit == "0123456789abcdef"
+        ));
+        assert!(published_rows >= 4);
+    }
+
+    #[test]
+    fn publish_snapshot_should_reject_graph_poisoning_before_transaction() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let (nodes, mut edges, evidence) = fixture();
+        edges[0].target = NodeId::new("node:missing");
+        let workspace = workspace();
+
+        let result = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:poisoned",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+
+        assert!(matches!(result, Err(StoreError::InvalidGraphSnapshot(_))));
+    }
+
+    #[test]
+    fn interrupted_publication_should_preserve_previous_snapshot() {
+        let mut store = SqliteStore::in_memory().expect("test store");
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:previous",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })
+            .expect("initial publication");
+        let relabeled = nodes
+            .iter()
+            .map(|node| Node {
+                label: format!("{} renamed", node.label),
+                ..node.clone()
+            })
+            .collect::<Vec<_>>();
+        let mut rows = 0_u64;
+        let interrupted = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _ = store.publish_snapshot_with_progress(
+                SnapshotBatch {
+                    workspace: &workspace,
+                    snapshot_id: "snapshot:interrupted",
+                    nodes: &relabeled,
+                    edges: &edges,
+                    evidence: &evidence,
+                    fingerprints: &[],
+                    extractor_batches: &[],
+                    extractor_runs: &[],
+                    manual_links: &[],
+                    community_snapshot: None,
+                },
+                |completed| {
+                    rows = rows.saturating_add(completed);
+                    assert!(rows < 2, "injected publication interruption");
+                },
+            );
+        }));
+
+        assert!(interrupted.is_err());
+        assert_eq!(
+            store
+                .current_snapshot_summary("commerce")
+                .expect("previous snapshot remains")
+                .snapshot_id,
+            "snapshot:previous"
+        );
+        let mut expected_nodes = nodes;
+        expected_nodes.sort_by(|left, right| left.id.cmp(&right.id));
+        assert_eq!(
+            store
+                .load_current_graph("commerce")
+                .expect("previous graph")
+                .0,
+            expected_nodes
+        );
+    }
+
+    #[test]
+    fn republication_should_write_only_changed_rows_and_keep_fts_current()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut store = SqliteStore::in_memory()?;
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let batch = |snapshot_id, nodes| SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id,
+            nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        };
+        store.publish_snapshot(batch("snapshot:first", &nodes))?;
+        let mut unchanged_rows = 0_u64;
+        store.publish_snapshot_with_progress(batch("snapshot:second", &nodes), |rows| {
+            unchanged_rows += rows;
+        })?;
+        let mut relabeled = nodes.clone();
+        relabeled[0].label = "Checkout gateway".to_owned();
+        let mut changed_rows = 0_u64;
+        store.publish_snapshot_with_progress(batch("snapshot:third", &relabeled), |rows| {
+            changed_rows += rows;
+        })?;
+        let hits = store.search_current_nodes("commerce", "gateway", 10)?;
+        let fts_rows = store
+            .connection
+            .query_row("SELECT COUNT(*) FROM nodes_fts", [], |row| {
+                row.get::<_, i64>(0)
+            })?;
+
+        assert_eq!((unchanged_rows, changed_rows), (0, 1));
+        assert_eq!(hits.len(), 1);
+        assert_eq!(fts_rows, 2);
+        Ok(())
+    }
+
+    #[test]
+    fn publish_snapshot_should_reject_bidi_labels() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let (mut nodes, edges, evidence) = fixture();
+        nodes[0].label = "safe\u{202e}txt.exe".to_owned();
+        let workspace = workspace();
+
+        let result = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:bidi",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+
+        assert!(matches!(result, Err(StoreError::InvalidGraphSnapshot(_))));
+    }
+
+    #[test]
+    fn publish_snapshot_should_reject_control_chars_in_path_display() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let fingerprint = ArtifactFingerprint {
+            repo_id: RepoId::new("repo:web"),
+            checkout_id: CheckoutId::new("checkout:web"),
+            path: NativePath {
+                encoding: NativePathEncoding::Utf8,
+                bytes: b"src/bad\x1bname.ts".to_vec(),
+                display: "src/bad\x1bname.ts".to_owned(),
+            },
+            extractor: "test".to_owned(),
+            content_hash: "hash".to_owned(),
+            size_bytes: 1,
+        };
+
+        let result = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:control-path",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[fingerprint],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+
+        assert!(matches!(
+            result,
+            Err(StoreError::InvalidPersistenceRecord(_))
+        ));
+    }
+
+    #[test]
+    fn publish_snapshot_should_atomically_round_trip_graph_and_communities() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let expected = community_fixture("snapshot:community");
+        let result = store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:community",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: Some(&expected),
+            })
+            .and_then(|()| {
+                Ok((
+                    store.load_current_graph("commerce")?,
+                    store.load_current_community_snapshot("commerce")?,
+                ))
+            });
+
+        assert!(matches!(
+            result,
+            Ok(((stored_nodes, stored_edges), stored_communities))
+                if stored_nodes.len() == 2
+                    && stored_edges.len() == 1
+                    && stored_communities == expected
+        ));
+    }
+
+    #[test]
+    fn invalid_community_membership_should_preserve_current_snapshot() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let first = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:valid",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+        assert!(first.is_ok(), "valid fixture failed: {first:?}");
+        let mut invalid = community_fixture("snapshot:invalid");
+        invalid.communities[0]
+            .members
+            .push(NodeId::new("node:missing"));
+        invalid.communities[0].metrics.size = 3;
+        let failure = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:invalid",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: Some(&invalid),
+        });
+        let current = store.current_snapshot_summary("commerce");
+
+        assert!(matches!(
+            (failure, current),
+            (
+                Err(StoreError::CommunityMembershipNodeMissing {
+                    snapshot_id,
+                    community_id,
+                    node_id,
+                }),
+                Ok(summary),
+            ) if snapshot_id == "snapshot:invalid"
+                && community_id == "community:orders"
+                && node_id == "node:missing"
+                && summary.snapshot_id == "snapshot:valid"
+        ));
+    }
+
+    #[test]
+    fn duplicate_community_ids_should_return_domain_error() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let mut communities = community_fixture("snapshot:duplicate");
+        communities
+            .communities
+            .push(communities.communities[0].clone());
+
+        let result = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:duplicate",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: Some(&communities),
+        });
+
+        assert!(matches!(
+            result,
+            Err(StoreError::DuplicateCommunityId {
+                snapshot_id,
+                community_id,
+            }) if snapshot_id == "snapshot:duplicate"
+                && community_id == "community:orders"
+        ));
+    }
+
+    #[test]
+    fn previous_community_snapshot_should_remain_loadable_until_next_publication() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let historical_communities = community_fixture("snapshot:historical");
+        let current_communities = community_fixture("snapshot:current");
+        let first = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:historical",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: Some(&historical_communities),
+        });
+        assert!(first.is_ok(), "historical fixture failed: {first:?}");
+        let second = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:current",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: Some(&current_communities),
+        });
+        assert!(second.is_ok(), "current fixture failed: {second:?}");
+
+        assert!(matches!(
+            store.load_graph_snapshot("snapshot:historical"),
+            Err(StoreError::SnapshotMissing(_))
+        ));
+        assert!(matches!(
+            store.load_workspace_community_snapshot("commerce", "snapshot:historical"),
+            Ok(stored) if stored == historical_communities
+        ));
+        let third_communities = community_fixture("snapshot:third");
+        let third = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:third",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: Some(&third_communities),
+        });
+        assert!(third.is_ok(), "third fixture failed: {third:?}");
+        assert!(matches!(
+            store.load_community_snapshot("snapshot:historical"),
+            Err(StoreError::SnapshotMissing(_))
+        ));
+        assert!(matches!(
+            store.load_community_snapshot("snapshot:current"),
+            Ok(stored) if stored == current_communities
+        ));
+    }
+
+    #[test]
+    fn load_community_snapshot_should_reject_inconsistent_stored_metrics() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let communities = community_fixture("snapshot:malformed");
+        let setup = store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:malformed",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: Some(&communities),
+            })
+            .and_then(|()| {
+                store.connection.execute(
+                    "UPDATE communities SET metrics_json = ?1
+                     WHERE snapshot_id = ?2 AND id = ?3",
+                    rusqlite::params![r#"{"size":1,"density":0.5,"cohesion":1.0,"coupling":0.0,"cross_community_edges":0}"#, "snapshot:malformed", "community:orders"],
+                )?;
+                Ok(())
+            });
+        assert!(setup.is_ok(), "malformed fixture failed: {setup:?}");
+
+        let result = store.load_community_snapshot("snapshot:malformed");
+
+        assert!(matches!(
+            result,
+            Err(StoreError::MalformedStoredData { reason, .. })
+                if reason == "metrics size does not match normalized membership count"
+        ));
+    }
+
+    #[test]
+    fn integrity_check_should_pass_after_initial_schema_creation() {
+        let result = SqliteStore::in_memory().and_then(|store| store.integrity_check());
+
+        assert!(matches!(result, Ok(true)));
+    }
+
+    #[test]
+    fn integrity_check_should_detect_foreign_key_corruption() {
+        let store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let setup = store.connection.execute_batch(
+            "PRAGMA foreign_keys = OFF;
+             INSERT INTO workspaces(name, manifest_hash, id)
+             VALUES ('corrupt', 'hash', 'workspace:corrupt');
+             INSERT INTO repo_snapshots(id, workspace_name)
+             VALUES ('snapshot:corrupt', 'corrupt');
+             INSERT INTO edges(
+                workspace_name, id, source_node_id, target_node_id, kind, confidence,
+                epistemic_status
+             ) VALUES (
+                'corrupt', 'edge:corrupt', 'missing:a', 'missing:b',
+                '\"calls_remote\"', 1.0, '\"confirmed\"'
+             );
+             PRAGMA foreign_keys = ON;",
+        );
+        assert!(setup.is_ok(), "corruption fixture failed: {setup:?}");
+        let result = store.integrity_check();
+
+        assert!(matches!(result, Ok(false)));
+    }
+
+    #[test]
+    fn fresh_database_should_apply_initial_schema() {
+        let result = SqliteStore::in_memory().and_then(|store| store.schema_id());
+
+        assert!(matches!(result, Ok(schema_id) if schema_id == super::schema_identity()));
+    }
+
+    #[test]
+    fn initial_schema_should_include_all_persistence_domains()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let store = SqliteStore::in_memory()?;
+        let table_count = store.connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_schema
+             WHERE type = 'table'
+               AND name IN (
+                    'workspaces',
+                    'repositories',
+                    'repo_snapshots',
+                    'nodes',
+                    'evidence',
+                    'edges',
+                    'artifact_fingerprints',
+                    'extractor_batches',
+                    'community_snapshots',
+                    'manual_links',
+                    'provider_capabilities',
+                    'query_cache',
+                    'http_link_coverage',
+                    'http_link_gaps'
+               )",
+            [],
+            |row| row.get::<_, i64>(0),
+        )?;
+
+        assert_eq!(
+            (store.schema_id()?.as_str(), table_count),
+            (super::schema_identity(), 14)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn exact_initial_schema_validation_should_be_repeatable()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut connection = rusqlite::Connection::open_in_memory()?;
+        super::initialize_empty_schema(&mut connection)?;
+        super::validate_exact_schema(&connection)?;
+        super::validate_exact_schema(&connection)?;
+
+        assert_eq!(
+            super::stored_schema_id(&connection)?,
+            super::schema_identity()
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn current_schema_should_enforce_tables_indexes_triggers_and_foreign_keys()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let store = SqliteStore::in_memory()?;
+        let strict_tables = store.connection.query_row(
+            "SELECT COUNT(*), COALESCE(SUM(strict), 0)
+             FROM pragma_table_list
+             WHERE name IN ('manual_links', 'provider_capabilities', 'query_cache')",
+            [],
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)),
+        )?;
+        let indexes = store.connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_schema
+             WHERE type = 'index'
+               AND name IN (
+                    'repo_snapshots_id_workspace_idx',
+                    'provider_capabilities_repo_provider_idx',
+                    'query_cache_snapshot_idx',
+                    'query_cache_workspace_expiry_idx',
+                    'query_cache_workspace_stored_idx'
+               )",
+            [],
+            |row| row.get::<_, i64>(0),
+        )?;
+        let triggers = store.connection.query_row(
+            "SELECT COUNT(*) FROM sqlite_schema
+             WHERE type = 'trigger'
+               AND name IN (
+                    'provider_capabilities_require_registration',
+                    'provider_capabilities_update_require_registration',
+                    'query_cache_bound_workspace_entries',
+                    'nodes_fts_insert',
+                    'nodes_fts_update',
+                    'nodes_fts_delete'
+               )",
+            [],
+            |row| row.get::<_, i64>(0),
+        )?;
+        let foreign_keys = ["manual_links", "provider_capabilities", "query_cache"]
+            .into_iter()
+            .try_fold(0_i64, |count, table| {
+                store
+                    .connection
+                    .query_row(
+                        &format!("SELECT COUNT(*) FROM pragma_foreign_key_list('{table}')"),
+                        [],
+                        |row| row.get::<_, i64>(0),
+                    )
+                    .map(|table_count| count + table_count)
+            })?;
+
+        assert_eq!(
+            (strict_tables, indexes, triggers, foreign_keys),
+            ((3, 3), 5, 6, 8)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn exact_schema_should_reject_unknown_schema_identity() {
+        let connection = match rusqlite::Connection::open_in_memory() {
+            Ok(connection) => connection,
+            Err(error) => panic!("test connection must initialize: {error}"),
+        };
+        let setup = connection.execute_batch(
+            "CREATE TABLE schema_metadata (
+                schema_id TEXT PRIMARY KEY,
+                applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+             );
+             INSERT INTO schema_metadata(schema_id) VALUES ('schema:unknown');",
+        );
+        assert!(setup.is_ok(), "newer schema fixture failed: {setup:?}");
+        let result = SqliteStore::from_connection(connection);
+
+        assert!(matches!(result, Err(StoreError::InvalidSchema)));
+    }
+
+    #[test]
+    fn exact_schema_should_reject_structurally_identical_database_with_other_identity()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut connection = rusqlite::Connection::open_in_memory()?;
+        super::initialize_empty_schema(&mut connection)?;
+        connection.execute(
+            "UPDATE schema_metadata SET schema_id = 'schema:other' WHERE schema_id = ?1",
+            [super::schema_identity()],
+        )?;
+
+        let result = SqliteStore::from_connection(connection);
+
+        assert!(matches!(result, Err(StoreError::InvalidSchema)));
+        Ok(())
+    }
+
+    #[test]
+    fn exact_schema_should_reject_missing_schema_objects() -> Result<(), Box<dyn std::error::Error>>
+    {
+        let store = SqliteStore::in_memory()?;
+        store
+            .connection
+            .execute_batch("DROP TRIGGER query_cache_bound_workspace_entries")?;
+
+        assert!(matches!(
+            super::validate_exact_schema(&store.connection),
+            Err(StoreError::InvalidSchema)
+        ));
+        Ok(())
+    }
+
+    #[test]
+    fn database_instance_identity_should_be_opaque_and_stable()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let store = SqliteStore::in_memory()?;
+        let first = store.database_instance_id()?;
+        let second = store.database_instance_id()?;
+
+        assert_eq!(first, second);
+        assert_eq!(first.len(), 64);
+        assert!(first.bytes().all(|byte| byte.is_ascii_hexdigit()));
+        Ok(())
+    }
+
+    #[test]
+    fn database_with_incomplete_current_schema_should_be_rejected()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("invalid.db");
+        let connection = rusqlite::Connection::open(&database)?;
+        connection.execute_batch(INITIAL_SCHEMA)?;
+        connection.execute_batch(
+            "ALTER TABLE extractor_batches DROP COLUMN budget_fingerprint;
+             ALTER TABLE extractor_batches DROP COLUMN source_was_lossy;",
+        )?;
+        drop(connection);
+
+        let result = SqliteStore::open(&database);
+
+        assert!(matches!(result, Err(StoreError::InvalidSchema)));
+        Ok(())
+    }
+
+    #[test]
+    fn read_only_open_should_reject_non_exact_schema() -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("uninitialized.db");
+        let connection = rusqlite::Connection::open(&database)?;
+        connection.execute_batch(
+            "CREATE TABLE schema_metadata (
+                schema_id TEXT PRIMARY KEY,
+                applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+             );",
+        )?;
+        drop(connection);
+
+        let result = SqliteStore::open_read_only(&database);
+
+        assert!(matches!(result, Err(StoreError::InvalidSchema)));
+        Ok(())
+    }
+
+    #[test]
+    fn workspace_registry_should_round_trip_native_paths() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let expected = workspace();
+        let result = store
+            .save_workspace_registry(&expected)
+            .and_then(|()| store.load_workspace_registry("commerce"));
+
+        assert!(matches!(result, Ok(actual) if actual == expected));
+    }
+
+    #[test]
+    fn workspace_registry_should_list_repository_counts() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let result = store
+            .save_workspace_registry(&workspace())
+            .and_then(|()| store.list_workspaces());
+
+        assert!(matches!(
+            result,
+            Ok(workspaces)
+                if workspaces.len() == 1
+                    && workspaces[0].name == "commerce"
+                    && workspaces[0].repository_count == 1
+        ));
+    }
+
+    #[test]
+    fn workspace_registry_should_remove_and_collect_orphans() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let result = store
+            .save_workspace_registry(&workspace())
+            .and_then(|()| store.remove_workspace("commerce"))
+            .and_then(|removed| {
+                let repositories =
+                    store
+                        .connection
+                        .query_row("SELECT COUNT(*) FROM repositories", [], |row| {
+                            row.get::<_, i64>(0)
+                        })?;
+                Ok((removed, store.workspace_exists("commerce")?, repositories))
+            });
+
+        assert!(matches!(result, Ok((true, false, 0))));
+    }
+
+    #[test]
+    fn failed_snapshot_should_preserve_previous_current_snapshot() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let first = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:valid",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+        assert!(first.is_ok(), "valid fixture failed: {first:?}");
+        let mut invalid_edges = edges;
+        invalid_edges[0].evidence = vec![EvidenceId::new("evidence:missing")];
+        let failed = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:invalid",
+            nodes: &nodes,
+            edges: &invalid_edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+        let result = failed
+            .and_then(|()| store.load_current_graph("commerce"))
+            .map(|_| false)
+            .or_else(|_| {
+                store
+                    .load_current_graph("commerce")
+                    .map(|(_, current_edges)| current_edges[0].id.as_str() == "edge:1")
+            });
+
+        assert!(matches!(result, Ok(true)));
+    }
+
+    #[test]
+    fn open_should_initialize_schema_only_once() -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("store.db");
+
+        let initial = SqliteStore::open(&database)?;
+        assert_eq!(initial.schema_id()?, super::schema_identity());
+        drop(initial);
+        let repeated = SqliteStore::open(&database)?;
+        assert_eq!(repeated.schema_id()?, super::schema_identity());
+        Ok(())
+    }
+
+    #[test]
+    fn composite_reads_should_keep_graph_and_evidence_during_publication()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("composite.db");
+        let workspace = workspace();
+        let (mut nodes, edges, evidence) = fixture();
+        nodes.sort_by(|left, right| left.id.cmp(&right.id));
+        let mut writer = SqliteStore::open(&database)?;
+        writer.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:before",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        let reader = SqliteStore::open_read_only(&database)?;
+        let mut next_nodes = nodes.clone();
+        next_nodes[0].label = "POST /updated".to_owned();
+        let mut next_evidence = evidence.clone();
+        next_evidence[0].content_hash = Some("updated".to_owned());
+
+        let (read_nodes, read_edges, read_evidence) = reader.consistent_read(|| {
+            let snapshot = reader.current_snapshot_summary("commerce")?;
+            let (read_nodes, read_edges) = reader.load_graph_snapshot(&snapshot.snapshot_id)?;
+            // Publish through a separate connection after the graph read has finished.
+            writer.publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:after",
+                nodes: &next_nodes,
+                edges: &edges,
+                evidence: &next_evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })?;
+            let read_evidence = reader.load_evidence_snapshot(&snapshot.snapshot_id)?;
+            Ok::<_, StoreError>((read_nodes, read_edges, read_evidence))
+        })?;
+        assert_eq!(read_nodes, nodes);
+        assert_eq!(read_edges, edges);
+        assert_eq!(read_evidence, evidence);
+        assert!(reader.connection.is_autocommit());
+        assert_eq!(reader.load_current_graph("commerce")?.0, next_nodes);
+        assert_eq!(reader.load_current_evidence("commerce")?, next_evidence);
+        assert!(matches!(
+            reader.load_evidence_snapshot("snapshot:before"),
+            Err(StoreError::SnapshotMissing(_))
+        ));
+
+        let failed = reader.consistent_read(|| reader.load_graph_snapshot("snapshot:missing"));
+        assert!(matches!(failed, Err(StoreError::SnapshotMissing(_))));
+        assert!(reader.connection.is_autocommit());
+        assert_eq!(reader.load_current_graph("commerce")?.0, next_nodes);
+        Ok(())
+    }
+
+    #[test]
+    fn wal_should_allow_readers_during_snapshot_publication()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("concurrent.db");
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let mut writer = SqliteStore::open(&database)?;
+        writer.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:0",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        let reader_paths = [database.clone(), database];
+        let readers = reader_paths.map(|path| {
+            std::thread::spawn(move || -> Result<(), String> {
+                for _iteration in 0..25 {
+                    SqliteStore::open_read_only(&path)
+                        .and_then(|store| store.load_current_graph("commerce"))
+                        .map_err(|error| error.to_string())?;
+                }
+                Ok(())
+            })
+        });
+        for sequence in 1..=10 {
+            writer.publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: &format!("snapshot:{sequence}"),
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })?;
+        }
+        let reader_results = readers.map(|reader| {
+            reader
+                .join()
+                .map_err(|_| "reader thread panicked".to_owned())
+                .and_then(|result| result)
+        });
+
+        assert_eq!(reader_results, [Ok(()), Ok(())]);
+        Ok(())
+    }
+
+    #[test]
+    fn writer_lock_should_reject_second_active_owner() -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("store.db");
+        let first = StoreLock::acquire(&database, Duration::from_mins(1))?;
+        let second = StoreLock::acquire(&database, Duration::from_mins(1));
+
+        assert!(matches!(second, Err(StoreError::LockHeld(_))));
+        drop(first);
+        Ok(())
+    }
+
+    #[test]
+    fn writer_lock_should_recover_expired_sidecar() -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("store.db");
+        let sidecar = lock_path(&database);
+        fs::write(&sidecar, "expired-owner")?;
+        std::thread::sleep(Duration::from_millis(5));
+        let lock = StoreLock::acquire(&database, Duration::from_millis(1));
+
+        assert!(lock.is_ok(), "stale lock was not recovered: {lock:?}");
+        Ok(())
+    }
+
+    #[test]
+    fn writer_lock_should_not_reclaim_live_owner_after_threshold()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("store.db");
+        let first = StoreLock::acquire(&database, Duration::ZERO)?;
+        std::thread::sleep(Duration::from_millis(2));
+        let second = StoreLock::acquire(&database, Duration::ZERO);
+
+        assert!(matches!(second, Err(StoreError::LockHeld(_))));
+        drop(first);
+        Ok(())
+    }
+
+    #[test]
+    fn multiprocess_lock_helper() -> Result<(), Box<dyn std::error::Error>> {
+        if std::env::var(LOCK_HELPER_ENV).as_deref() != Ok("1") {
+            return Ok(());
+        }
+        let database = std::env::var_os(LOCK_DATABASE_ENV)
+            .map(std::path::PathBuf::from)
+            .ok_or_else(|| std::io::Error::other("lock database environment is missing"))?;
+        let ready = std::env::var_os(LOCK_READY_ENV)
+            .map(std::path::PathBuf::from)
+            .ok_or_else(|| std::io::Error::other("lock ready environment is missing"))?;
+        let _lock = StoreLock::acquire(&database, Duration::from_hours(1))?;
+        fs::write(ready, "ready")?;
+        std::thread::sleep(Duration::from_secs(30));
+        Ok(())
+    }
+
+    #[test]
+    fn multiprocess_lock_should_recover_after_abrupt_owner_exit()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let temporary = tempfile::tempdir()?;
+        let database = temporary.path().join("store.db");
+        let ready = temporary.path().join("ready");
+        let executable = std::env::current_exe()?;
+        let mut child = Command::new(executable)
+            .args(["--exact", "tests::multiprocess_lock_helper", "--nocapture"])
+            .env(LOCK_HELPER_ENV, "1")
+            .env(LOCK_DATABASE_ENV, &database)
+            .env(LOCK_READY_ENV, &ready)
+            .spawn()?;
+        let mut helper_ready = false;
+        for _attempt in 0..200 {
+            if ready.exists() {
+                helper_ready = true;
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(5));
+        }
+        if !helper_ready {
+            child.kill()?;
+            let _status = child.wait()?;
+            return Err(std::io::Error::other("lock helper did not become ready").into());
+        }
+        let while_alive = StoreLock::acquire(&database, Duration::ZERO);
+        child.kill()?;
+        let _status = child.wait()?;
+        let after_exit = StoreLock::acquire(&database, Duration::ZERO);
+
+        assert_eq!(
+            (
+                matches!(while_alive, Err(StoreError::LockHeld(_))),
+                after_exit.is_ok(),
+            ),
+            (true, true)
+        );
+        Ok(())
+    }
+
+    #[test]
+    fn published_snapshot_should_record_repository_freshness() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let result = store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:1",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })
+            .and_then(|()| store.load_current_freshness("commerce"));
+
+        assert!(matches!(
+            result,
+            Ok(freshness)
+                if freshness.len() == 1
+                    && freshness[0].state == RepoFreshnessState::Fresh
+        ));
+    }
+
+    #[test]
+    fn unresolved_repository_dependency_gap_should_persist_as_partial_freshness() {
+        let mut store = SqliteStore::in_memory().expect("test store");
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let gaps = [RepositoryCoverageGap {
+            repo_id: RepoId::new("repo:web"),
+            reason: "An explicit repository dependency could not be matched exactly.".to_owned(),
+        }];
+        let http_links = HttpLinkReport {
+            coverage: HttpLinkCoverage {
+                linked: 3,
+                no_provider: 1,
+                ambiguous: 1,
+                external: 0,
+            },
+            gaps: vec![
+                HttpLinkGap {
+                    caller: NodeId::new("test:orders"),
+                    method: "GET".to_owned(),
+                    path: "/missing".to_owned(),
+                    reason: HttpLinkGapReason::NoProvider,
+                    candidates: Vec::new(),
+                },
+                HttpLinkGap {
+                    caller: NodeId::new("consumer:web"),
+                    method: "GET".to_owned(),
+                    path: "/orders/{id}".to_owned(),
+                    reason: HttpLinkGapReason::Ambiguous,
+                    candidates: vec![NodeId::new("provider:a"), NodeId::new("provider:b")],
+                },
+            ],
+        };
+
+        store
+            .publish_snapshot_with_progress_and_coverage(
+                SnapshotBatch {
+                    workspace: &workspace,
+                    snapshot_id: "snapshot:document-gap",
+                    nodes: &nodes,
+                    edges: &edges,
+                    evidence: &evidence,
+                    fingerprints: &[],
+                    extractor_batches: &[],
+                    extractor_runs: &[],
+                    manual_links: &[],
+                    community_snapshot: None,
+                },
+                None,
+                &gaps,
+                &http_links,
+                |_| {},
+            )
+            .expect("publish");
+        let freshness = store.load_current_freshness("commerce").expect("freshness");
+        let stored_links = store
+            .load_http_link_report("commerce", 10)
+            .expect("HTTP link report");
+
+        let caller_gaps = store
+            .load_http_link_gaps_for_callers("commerce", &[NodeId::new("consumer:web")])
+            .expect("caller gaps");
+
+        assert_eq!(caller_gaps, http_links.gaps[1..]);
+        assert_eq!(stored_links, (http_links, 2));
+        assert_eq!(freshness[0].state, RepoFreshnessState::Partial);
+        assert!(
+            freshness[0]
+                .reason
+                .as_deref()
+                .is_some_and(|reason| reason.contains("could not be matched exactly"))
+        );
+    }
+
+    #[test]
+    fn incremental_artifacts_and_runs_should_round_trip() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let (fingerprint, run) = incremental_fixture();
+        let extractor_batch = StoredExtractorBatch {
+            source: fingerprint.clone(),
+            extractor_version: "1.0.0".to_owned(),
+            budget_fingerprint: "extraction-budgets:test".to_owned(),
+            source_was_lossy: false,
+            output_count: 1,
+            payload: br#"{"observations":["GET:/orders"]}"#.to_vec(),
+        };
+        let result = store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:1",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: std::slice::from_ref(&fingerprint),
+                extractor_batches: std::slice::from_ref(&extractor_batch),
+                extractor_runs: std::slice::from_ref(&run),
+                manual_links: &[],
+                community_snapshot: None,
+            })
+            .and_then(|()| {
+                Ok((
+                    store.load_current_artifact_fingerprints("commerce")?,
+                    store.load_current_extractor_batches("commerce")?,
+                    store.load_current_extractor_runs("commerce")?,
+                ))
+            });
+
+        assert!(matches!(
+            result,
+            Ok((fingerprints, batches, runs))
+                if fingerprints == vec![fingerprint]
+                    && batches == vec![extractor_batch]
+                    && runs == vec![run]
+        ));
+        assert!(
+            store
+                .load_current_extractor_batches_with_limit("commerce", 1)
+                .expect("bounded batch read")
+                .is_empty(),
+            "SQLite must omit an oversized payload before copying its BLOB"
+        );
+    }
+
+    #[test]
+    fn manual_links_should_round_trip_with_the_current_snapshot()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut store = SqliteStore::in_memory()?;
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let historical_links = manual_link_fixture("snapshot:historical-links");
+        store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:historical-links",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &historical_links,
+            community_snapshot: None,
+        })?;
+        store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:current-links",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        let mut current_links = manual_link_fixture("snapshot:current-links");
+        current_links.truncate(1);
+        store.persist_manual_links("snapshot:current-links", &current_links)?;
+
+        let stored_current = store.load_manual_links("snapshot:current-links")?;
+
+        assert!(matches!(
+            store.load_manual_links("snapshot:historical-links"),
+            Err(StoreError::SnapshotMissing(_))
+        ));
+        assert_eq!(stored_current, current_links);
+        Ok(())
+    }
+
+    #[test]
+    fn provider_capabilities_should_upsert_and_round_trip_without_provider_payloads()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut store = SqliteStore::in_memory()?;
+        store.save_workspace_registry(&workspace())?;
+        let mut expected = ProviderCapabilityRecord {
+            workspace_name: "commerce".to_owned(),
+            repo_id: RepoId::new("repo:web"),
+            provider: "codegraph".to_owned(),
+            provider_version: "1.2.3".to_owned(),
+            capabilities: vec!["call_paths".to_owned(), "symbols".to_owned()],
+            observed_at_unix_ms: 100,
+        };
+        store.upsert_provider_capabilities(&expected)?;
+        expected.capabilities = vec!["symbols".to_owned()];
+        expected.observed_at_unix_ms = 200;
+        store.upsert_provider_capabilities(&expected)?;
+
+        let actual = store.load_provider_capabilities(
+            "commerce",
+            &RepoId::new("repo:web"),
+            "codegraph",
+            "1.2.3",
+        )?;
+
+        assert_eq!(actual, Some(expected));
+        Ok(())
+    }
+
+    #[test]
+    fn clear_query_cache_should_remove_only_selected_workspace()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut store = SqliteStore::in_memory()?;
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:cache-commerce",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        let mut other_workspace = workspace.clone();
+        other_workspace.id = WorkspaceId::new("workspace:other");
+        other_workspace.name = "other".to_owned();
+        store.publish_snapshot(SnapshotBatch {
+            workspace: &other_workspace,
+            snapshot_id: "snapshot:cache-other",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        for (workspace_name, snapshot_id) in [
+            ("commerce", "snapshot:cache-commerce"),
+            ("other", "snapshot:cache-other"),
+        ] {
+            store.connection.execute(
+                "INSERT INTO query_cache(
+                    workspace_name, snapshot_id, input_fingerprint, result_summary_json,
+                    stored_at_unix_ms
+                 ) VALUES (?1, ?2, 'input:1', ?3, 1)",
+                params![workspace_name, snapshot_id, b"{}".as_slice()],
+            )?;
+        }
+
+        let removed = store.clear_query_cache("commerce")?;
+        let commerce_count = store.connection.query_row(
+            "SELECT COUNT(*) FROM query_cache WHERE workspace_name = 'commerce'",
+            [],
+            |row| row.get::<_, i64>(0),
+        )?;
+        let other_count = store.connection.query_row(
+            "SELECT COUNT(*) FROM query_cache WHERE workspace_name = 'other'",
+            [],
+            |row| row.get::<_, i64>(0),
+        )?;
+
+        assert_eq!((removed, commerce_count, other_count), (1, 0, 1));
+        Ok(())
+    }
+
+    #[test]
+    fn query_cache_should_round_trip_exact_unexpired_result()
+    -> Result<(), Box<dyn std::error::Error>> {
+        let mut store = SqliteStore::in_memory()?;
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:query-cache",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        let expected = QueryCacheRecord {
+            workspace_name: "commerce".to_owned(),
+            snapshot_id: "snapshot:query-cache".to_owned(),
+            input_fingerprint: "query:one".to_owned(),
+            result_summary_json: br#"{"schema_version":2}"#.to_vec(),
+            stored_at_unix_ms: 100,
+            expires_at_unix_ms: Some(200),
+        };
+        store.put_query_cache(&expected)?;
+
+        let current =
+            store.load_query_cache("commerce", "snapshot:query-cache", "query:one", 150)?;
+        let expired =
+            store.load_query_cache("commerce", "snapshot:query-cache", "query:one", 201)?;
+
+        assert_eq!((current, expired), (Some(expected), None));
+        Ok(())
+    }
+
+    #[test]
+    fn query_cache_should_bound_entries_per_workspace() -> Result<(), Box<dyn std::error::Error>> {
+        let mut store = SqliteStore::in_memory()?;
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:bounded-cache",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        })?;
+        for sequence in 0..=1024 {
+            store.connection.execute(
+                "INSERT INTO query_cache(
+                    workspace_name, snapshot_id, input_fingerprint, result_summary_json,
+                    stored_at_unix_ms
+                 ) VALUES ('commerce', 'snapshot:bounded-cache', ?1, ?2, ?3)",
+                params![
+                    format!("input:{sequence}"),
+                    b"{}".as_slice(),
+                    i64::from(sequence)
+                ],
+            )?;
+        }
+        let bounded = store.connection.query_row(
+            "SELECT COUNT(*), MIN(stored_at_unix_ms) FROM query_cache
+             WHERE workspace_name = 'commerce'",
+            [],
+            |row| Ok((row.get::<_, i64>(0)?, row.get::<_, i64>(1)?)),
+        )?;
+
+        assert_eq!(bounded, (1024, 1));
+        Ok(())
+    }
+
+    #[test]
+    fn fts_should_search_only_current_snapshot_nodes() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let result = store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:1",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })
+            .and_then(|()| store.search_current_nodes("commerce", "orders", 10));
+
+        assert!(matches!(result, Ok(matches) if matches.len() == 2));
+    }
+
+    #[test]
+    fn ranked_fts_should_order_equal_scores_by_stable_node_id() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let setup = store.publish_snapshot(SnapshotBatch {
+            workspace: &workspace,
+            snapshot_id: "snapshot:ranked",
+            nodes: &nodes,
+            edges: &edges,
+            evidence: &evidence,
+            fingerprints: &[],
+            extractor_batches: &[],
+            extractor_runs: &[],
+            manual_links: &[],
+            community_snapshot: None,
+        });
+        assert!(setup.is_ok(), "ranked FTS fixture failed: {setup:?}");
+
+        let first = store.search_current_nodes_ranked("commerce", "orders", 500);
+        let second = store.search_current_nodes_ranked("commerce", "orders", 500);
+
+        assert!(matches!(
+            (first, second),
+            (Ok(first), Ok(second))
+                if first == second
+                    && first.len() == 2
+                    && first[0].node.id.as_str() == "node:api"
+                    && first[1].node.id.as_str() == "node:web"
+                    && first[0].fts_rank.to_bits() == first[1].fts_rank.to_bits()
+        ));
+    }
+
+    #[test]
+    fn ranked_fts_should_treat_natural_multi_term_queries_as_bounded_disjunctions() {
+        let mut store = SqliteStore::in_memory().expect("test store");
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        store
+            .publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:natural-query",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })
+            .expect("fixture should publish");
+
+        let matches = store
+            .search_current_nodes_ranked("commerce", "unrelated words orders architecture", 500)
+            .expect("natural query should remain valid");
+
+        assert_eq!(matches.len(), 2);
+    }
+
+    #[test]
+    fn fts_should_cleanup_replaced_and_removed_snapshots() {
+        let mut store = match SqliteStore::in_memory() {
+            Ok(store) => store,
+            Err(error) => panic!("test store must initialize: {error}"),
+        };
+        let workspace = workspace();
+        let (nodes, edges, evidence) = fixture();
+        let publish = |store: &mut SqliteStore| {
+            store.publish_snapshot(SnapshotBatch {
+                workspace: &workspace,
+                snapshot_id: "snapshot:same",
+                nodes: &nodes,
+                edges: &edges,
+                evidence: &evidence,
+                fingerprints: &[],
+                extractor_batches: &[],
+                extractor_runs: &[],
+                manual_links: &[],
+                community_snapshot: None,
+            })
+        };
+        let result = publish(&mut store)
+            .and_then(|()| publish(&mut store))
+            .and_then(|()| {
+                let before_remove =
+                    store
+                        .connection
+                        .query_row("SELECT COUNT(*) FROM nodes_fts", [], |row| {
+                            row.get::<_, i64>(0)
+                        })?;
+                store.remove_workspace("commerce")?;
+                let after_remove = store
+                    .connection
+                    .query_row("SELECT COUNT(*) FROM nodes_fts", [], |row| {
+                        row.get::<_, i64>(0)
+                    })
+                    .map_err(StoreError::from)?;
+                Ok((before_remove, after_remove))
+            });
+
+        assert!(matches!(result, Ok((2, 0))));
+    }
+}
+
+mod read_context;
+pub use read_context::ScopedReadView;
+
+#[cfg(test)]
+mod attribution_compatibility_tests {
+    use super::{
+        INITIAL_SCHEMA, SCHEMA_MODIFICATION_NOTICE, embedded_schema_identity, schema_identity,
+    };
+
+    #[test]
+    fn fixed_attribution_preserves_identity_without_ignoring_sql_changes() {
+        let normalized = INITIAL_SCHEMA.replace("\r\n", "\n");
+        let legacy = normalized
+            .strip_prefix(SCHEMA_MODIFICATION_NOTICE)
+            .expect("audited notice");
+        assert_eq!(
+            schema_identity(),
+            "schema:3b3d926039424487488a4730400d0e7c81c5f77b952ac48dfdce2cd25a7b04e9"
+        );
+        assert_eq!(embedded_schema_identity(legacy), schema_identity());
+        assert_ne!(
+            embedded_schema_identity(&format!(
+                "{normalized}\nCREATE TABLE changed_schema (id INTEGER);"
+            )),
+            schema_identity()
+        );
+        assert_ne!(
+            embedded_schema_identity(&("-- Another comment\n".to_owned() + legacy)),
+            schema_identity()
+        );
+    }
+}

@@ -1,0 +1,20 @@
+Code System Graph
+Copyright 2026 Code System Graph contributors
+
+This product includes software developed by Code System Graph contributors and third-party software
+listed in THIRD_PARTY_NOTICES.md. Code System Graph is licensed under the Apache License, Version 2.0.
+
+Local candidate distribution: System Graph Remote MCP 0.1.0-beta.1.
+The vendored engine is locally modified from upstream commit
+ d161502d8e6db606345f998574df10637591f9e8; see VENDOR.md and
+ licenses/vendor-modifications.json. It is not an unmodified upstream release.
+
+Preserve THIRD_PARTY_NOTICES and the accompanying licenses/ tree. Node bundled
+native notices and Rust standard-library notices are included. Runtime image
+OS notices and exact corresponding source archives are under /licenses/.
+These notices do not change third-party licenses or constitute a source offer.
+Redistribution clearance is incomplete; see docs/dependency-licenses.md.
+
+Final attribution review: every retained modified/added engine source file carries
+a prominent modification notice. Original notices are retained. Required pratt
+0.4.0 license text remains unavailable; redistribution is not cleared.

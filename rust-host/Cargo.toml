@@ -1,0 +1,20 @@
+[package]
+name = "hybrid-engine-host"
+version = "0.1.0"
+license = "Apache-2.0"
+edition = "2024"
+publish = false
+
+[dependencies]
+code-system-graph-core = { path = "../vendor/engine/crates/code-system-graph-core", default-features = false }
+code-system-graph-model = { path = "../vendor/engine/crates/code-system-graph-model" }
+code-system-graph-store-sqlite = { path = "../vendor/engine/crates/code-system-graph-store-sqlite" }
+serde = { version = "=1.0.229", features = ["derive"] }
+serde_json = "=1.0.151"
+
+[lints.rust]
+unsafe_code = "forbid"
+
+[lints.clippy]
+all = "deny"
+unwrap_used = "deny"

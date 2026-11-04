@@ -1,0 +1,738 @@
+{
+  "upstream": "https://github.com/dertin/code-system-graph",
+  "commit": "d161502d8e6db606345f998574df10637591f9e8",
+  "perFileNoticeReviewComplete": true,
+  "note": "All original 71 inherited modification entries remain, with two additional optional-HCL modifications. Fixed SQL attribution/schema compatibility is unchanged. HCL-enabled builds are not cleared for distribution.",
+  "files": [
+    {
+      "path": "Cargo.toml",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/Cargo.toml",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "# Modified from Code System Graph v1.2.1; local hardening and standalone packaging. See VENDOR.md.",
+      "sha256": "486876e27ac3d2ae3cadd1fd4c0c1984a44e1cfe5c45ae09af361cb670e96509",
+      "upstream_sha256": "4aa7e9737046d30fa0f4d250dd6b0e2f7bf43aa8cdfc3bc119125a5208e7d263"
+    },
+    {
+      "path": "README.md",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/README.md",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "<!-- Modified from Code System Graph v1.2.1; local hardening and standalone packaging. See VENDOR.md. -->",
+      "sha256": "61cc26a3ddbe5977aee02a55df96658be18cc02a6b9ea3d22d43e14dc89e6d6c",
+      "upstream_sha256": "e76d3d5688a00a4e954ceba8725c23f94ab9abea987ecf15185f2dcb00c04ff1"
+    },
+    {
+      "path": "crates/code-system-graph-model/Cargo.toml",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-model/Cargo.toml",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "# Modified from Code System Graph v1.2.1; local hardening and standalone packaging. See VENDOR.md.",
+      "sha256": "604f8f9ce96c35dbf65fde9c7b7aaf888277dedfe7ecbb250126b9feebe8d0b2",
+      "upstream_sha256": "23d336abb38729e729cfbcaf612a9a1e11c55597b3f08a021c06939ec33fa23e"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/Cargo.toml",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/Cargo.toml",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "# Modified from Code System Graph v1.2.1; local hardening and standalone packaging. See VENDOR.md.",
+      "sha256": "249f5c01fc3b6c1539682959c4891928f6624606ed246284563e51bc7f14e14d",
+      "upstream_sha256": "6664fe6d23ac717d77434aeb079a9bfdbe345053aecaa214385a82a77bf1d608"
+    },
+    {
+      "path": "crates/code-system-graph-core/examples/source_pins.rs",
+      "status": "added",
+      "upstream_file": null,
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "9d088f89d7554204b0d29b07178f376b1522e807b2a104a7df6f1630d0897eda",
+      "upstream_sha256": null
+    },
+    {
+      "path": "crates/code-system-graph-core/src/batch.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/batch.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "6f49ffaf5816df003351af145d745481556c590af0ae95091dea7caa925d6863",
+      "upstream_sha256": "6c708ed503943bc17cd57524624455664467e8e2794dc949771839b678787e1c"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/builtin_extractors.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/builtin_extractors.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "0741877e7f2e569894c7d462ed0b790c66dc84ef7997e42f90acb35222a120e2",
+      "upstream_sha256": "4133d2e9cd103be636ed305c14796890f2761fa3bbd1cd23468ec57d2f24d329"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/capability_dir.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/capability_dir.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "1cecd74f0298490e7170ce1d010a5aaa9ae6c8e377ff8bcb208c9b38d89368d8",
+      "upstream_sha256": "7b39c198db9f0bbe88efb2b622efeb316b679beb5a128cd3237a85264006911f"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/change_analysis.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/change_analysis.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "f6b7826296c8f615ede07e2a6cf2d2d1825bac0fa86062e6bd798ddf7628acd4",
+      "upstream_sha256": "80336ca59b107bbf2858fd58c9c7a26e072e4fcee97171e2fd07a1e77adc8a07"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/client_flows.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/client_flows.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "ae8f92f4615eccd788d440b963e2866aaed7ea3ec83b9f6c788f106eeb6ce538",
+      "upstream_sha256": "21c3dcf2a117c59664201b45d0bfa8b1a5f310986c63e0e65f451d4bc5842214"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/communities.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/communities.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "c72575cebad69b975b04021499e1a53935bb4e400fab811cdd597917c909478e",
+      "upstream_sha256": "4edde2763a7bd6d3c4847df0b20ed4860715d82a461d7bc68714b990f908e974"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/config.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/config.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "24a7d492a0ef55b86f5d867f7b05e22533552da14ae0ea061c82eb79f848541a",
+      "upstream_sha256": "f925c8286e8ce6b2940ba3511bdc913f0e4a7edab1c6e99cbf614fee2d6f7335"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/contract_compat.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/contract_compat.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "e50c79d2e0e14844128bb6aeef26d5ad5004c9c778f18d9975a8909ad594d185",
+      "upstream_sha256": "d28877efd24174e9fdbed17d6a5e85d5c8636df4d7ca2e298b7d8676699b5e24"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/corroboration.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/corroboration.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "b4f5ebbd46dd5dafb2876443310aa442417d777f1fa4fdd2e9b4e31dcaf9d62d",
+      "upstream_sha256": "3e122513e7a04f09eb557abb8a849f4a1ab0ada01aea9f872541a81fd61481c8"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/data_contracts.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/data_contracts.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "4454b1f4031a90dc0d741d3177c18764f118ce3af255a39fb2abb6a14cf6103c",
+      "upstream_sha256": "2a70015cbb8c6f8477b6f9dcad63d401acc5486938d44e93c9b68f13de0aa31d"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/documents.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/documents.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "1d4f93f6a73f19b3f2ede7436854fc9d1842f74e46ef4338231e65ad39b001bf",
+      "upstream_sha256": "02e5b572d3edd979ed8298b8d83a8a4f72a0dbb8b7f9718e5865b534804720f3"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/event_graph.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/event_graph.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "b29d7762f6cb32645b38722815c1480bea2d3702f7cafc769f24b32033556f00",
+      "upstream_sha256": "dcf9c36a168341b3da1e6e9b6e998de5087f2436ce5dc4927c00f6d23ef2a16e"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/extraction_budget.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/extraction_budget.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "a8c93cfd982d3aa3e8ed9d64209c2899810e75fd9ce83d910e3dbc1a9b7334a6",
+      "upstream_sha256": "da53f9d66175d1463f7d0c30ec39c703cc617634643c9fc7be16971b0a705e7d"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/extraction_graph.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/extraction_graph.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "cf02f3a197886a83531293bf7cb758972c0b1587906c9f5ed322cc107d9ce848",
+      "upstream_sha256": "8f98ea1245e553cd116005192150d3349579db052db338b59ee69cd60328667a"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/extractor.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/extractor.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "51e9e6a2624a45dfc61f9ef543d813e4323bf45511c510b8ea26e177daf7056a",
+      "upstream_sha256": "2ade907277ec4dfca82e312fc33a11c65fe869618a22752ce83bf90a930bef32"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/graphql_graph.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/graphql_graph.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "4f2750a4b03afa807409ac9c4ef23af6c3e809172d409143a32b24db10be8645",
+      "upstream_sha256": "0b837faec2955ef0de731aeced9efc4b6006b7ca4daf9092cf05acbcc053b157"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/http.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/http.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "828279e80ae4c7a141f20958e233929c4c8ffe66e988a132dd407f1a05754468",
+      "upstream_sha256": "0c320b2d2214ccef3098639ddebcec7603efb5abb90aaf188df5fef2a48d21cb"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/impact.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/impact.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "9c62ce417ef7e2b2a39c7fe373a71badccc6ff3a2ecf33214d34ea5d27fcafda",
+      "upstream_sha256": "f0ec066910f545ea4ea4e8215da5170d58695f20bf6210459872ad2c3dbd8802"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/incremental.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/incremental.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "613ff224bc53fbde1591e1420ff37234cbbf868f73971ed05d6e5b722c8f0609",
+      "upstream_sha256": "dba44135b6db0e204237e0e685d042150275a25c158f135898527a5e3aaf4696"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/interfaces.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/interfaces.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "2172f2997ae0aa987da77e28b36f535c3bd42f1f1425abc3337a61c33b983ea9",
+      "upstream_sha256": "81329b592ec79b8692929534d6edb739e966e31d3f8c9521e8f35d68c2ec7d59"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/lib.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/lib.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "278ac03c4a1162f0013b64379a99d6ea8275382c6a01fc84de1651c1e60253e4",
+      "upstream_sha256": "50722df6f010d2cd9701a07b44d842d48b8157871f532bb68ffb98eba40b0bc5"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/linker.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/linker.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "7a95dbc42c591cf8d0c9736688bcdc32d4948bb5dcbcc3c749b1f485aa610132",
+      "upstream_sha256": "636a1c8a75b6bc6f545d47bba03a6381524ce496b6ab7c95c2963105b6097d23"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/manifest.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/manifest.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "709e2eaada9849e686003e3bab65634aaa45732027fcd754b704eddd159838b2",
+      "upstream_sha256": "9fbb384a4d8e130e7567cc6c3652533dfe1ed45793df1b5398d11adf6126da9c"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/manifest_edit.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/manifest_edit.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "14eecf6bb6e2208b6228915a5d29672a3eac5beeec3d178251a84c3f8a59d121",
+      "upstream_sha256": "cf0a782c381888d65e9da1373711fcfd622e9bf7364ca2cef09663c87684319d"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/package_graph.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/package_graph.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "a40444376c2102d8ef4d8dbc451d3b476ca60b5f3c48420e5aa2739f0b356d6d",
+      "upstream_sha256": "0a01369c588b5a7a2c412cbd802f28553f80c93360cf5ec573264124e6c717e7"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/protobuf_contracts.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/protobuf_contracts.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "2be66d88033f505e6192da901a16cbf4c5630db1033405b3edfe3c94ddb6b495",
+      "upstream_sha256": "e12497c53af6ab0bbd1c62756fa498d33d9f76918abd98688889a644f1d7a914"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/protobuf_graph.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/protobuf_graph.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "20673b4ad1295a54390c8d25bd10df80ca47a34010cfe9bf94ca236413f0fdfb",
+      "upstream_sha256": "61babcaa5b5dc2762abbc023969093ac7e66bd8c498b292f2966876e6f6a2f44"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/provider.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/provider.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "1c7a2a9af313750e789c309672de7908064d6926ed1dff9f805d335421c30f87",
+      "upstream_sha256": "49279c92baf0860f76c70f51db40d6e231ef41e188da0fa00c3609cf21d15b52"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/query.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/query.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "738dea16b3ec4ffb120dc32364e333591ed62044e57eb9139cd103a355483aaf",
+      "upstream_sha256": "6a1b432457cba06dd9c57fabe6a57f3dc29919d5876bbe139dd193bc18daaf1c"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/registry.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/registry.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "9869108519e26d26ccce3e3cbf187f91910c3b431bc3e598e081b5b5dec350f4",
+      "upstream_sha256": "7fd02b7e28032995026e99c1f1efa752a050cd1eedb8bc28af3458b392e19323"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/router_mounts.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/router_mounts.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "96662dea115bb13cf15e35d541056bb0b7dec1b43e25d2079f6362d16653e6d0",
+      "upstream_sha256": "c1c0b4355bd40815e63d1f4b4583e1dac301bc6883613ae8918f59cf28863ece"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/routes.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/routes.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "e4fd456c64f2f416960568ef70e87c0c7bbdcb9170ce225e49668eccb629c760",
+      "upstream_sha256": "89ca5d59c65b6ad8d24144bcd2d3842138b429040b33fb7cd1c0119fd006d6c6"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/secret_safety.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/secret_safety.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "b580f1400795d568607a63e1d93de6f2603c594556f10c95fffbcebdb2773ae7",
+      "upstream_sha256": "a00ceac060ba2b96ad37978c0f199d2768058b9be6de2013acf3ff703932320c"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_graph.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_graph.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "fe612861d9beda088c7fa36e1501a2af09d5c8b1c1bf5ba11182d8b7d75b2e5d",
+      "upstream_sha256": "ae9b9c254e8ffcf32e4be6b7ba034df9a4b988224717f5d49d259bbdbd071763"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "edad8eb416450c948e2e72375cd283afb4df9bb63c3e464bfdb959774ced8cf9",
+      "upstream_sha256": "6c658f1132fdc024d58bcdcdea87067e7377797ebb21e52f7bdb1ae21b7c27ea"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_polyglot.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_polyglot.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "c7dbc5c6b1a20b1b57aeac609155ddb11bfdb2b9314aa0e83db4baebf2ba6d25",
+      "upstream_sha256": "358c123c9ee8081fe81307a3441ed6024d8277b7c8eb3166c608918344718397"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_symbol.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_symbol.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "26918e7049103a96ca8aa5b0bbdff92664ec7a149c57500050052b7ffaf08b79",
+      "upstream_sha256": "0b97066ff9c6efd53e788639c328d851f57115020e68a847cc4926176d25ebc9"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/test_links.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/test_links.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "324934297af932bfb6c0834ba1fa90b92842cb26272f276da81703e411273e13",
+      "upstream_sha256": "a644f920a0104df55f2046ece72270844d4120cdd04a0b1720c3187b5dfec65e"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/trace.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/trace.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "faf06817bd045ea5702c68e13903f15b5d8387f73ae528aa7e505efe99d2b462",
+      "upstream_sha256": "9134769155be6ec4cf39707ec452968da8d5d1a602ed1dec71233320c20e0383"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/trace_anchors.rs",
+      "status": "added",
+      "upstream_file": null,
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "2ffb3cb5f51bf9d081bd7b2fcf302125ca870ec08718fe874f884bbfcabc6409",
+      "upstream_sha256": null
+    },
+    {
+      "path": "crates/code-system-graph-core/tests/codegraph_provider_e2e.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/tests/codegraph_provider_e2e.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "99445b10a0c91e49e068ffd62a50126c630229b76afd1838a84f2e18261a207f",
+      "upstream_sha256": "451909fcee4c727a62879df496e604413d3294ccb81f8212f17668d6a5021dcc"
+    },
+    {
+      "path": "crates/code-system-graph-core/tests/compatibility.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/tests/compatibility.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "c001625384ff70fd8b1e5f1b2a52b98a32b3d47dc933f5154ef42a250dc75c61",
+      "upstream_sha256": "4332186a54903f5fe9e283a46dea6763bba4617f5c19d0c7e3bbf959b0118692"
+    },
+    {
+      "path": "crates/code-system-graph-core/tests/impact.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/tests/impact.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "80ed2273c84a4f7f624536c42c3ccdaa19904e9c7e0d477432f494173c1b8e11",
+      "upstream_sha256": "5d2a541408dfd28877580f57ddfbbeb753be262cf07beb6a2c52309fb4d5e29d"
+    },
+    {
+      "path": "crates/code-system-graph-core/tests/scale_performance.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/tests/scale_performance.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "8c264138c12951d97de2267df398b103e752aa21361b6450d99385c892af688b",
+      "upstream_sha256": "3c30cecf3187dcddccf954228e7bcf80be988f08fefbb9a255927d9463a6e483"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/codegraph/cli.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/codegraph/cli.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "4be40dba5bbbc600b554b5425777fe680cf0e3a81826aeefb5f2041eceae8c8e",
+      "upstream_sha256": "4f4b3f1e834bf31a4b9c0896a04280d426005adf55f33becfaeeedd7fb1da45f"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/codegraph/contract.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/codegraph/contract.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "fc5c9d2a802b0d3164be2036eb55e70e34f913b19921433225b80e204e3d4376",
+      "upstream_sha256": "b9448b6a6a28ad7489d8695ce9bb98e9188fc8c8ecff7b9f6c5e01283bc6dd42"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/codegraph/mcp.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/codegraph/mcp.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "035ac4be41313d186a517556b9b9ac25e5ccafc2081fe72f624ac81b87a53fe4",
+      "upstream_sha256": "2021f2fac6a91947be86e32a7c6df6ab66c79fb6b59865db3f79532703738788"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/codegraph/mod.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/codegraph/mod.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "8c4820a491af920f7e000ca9129ea507d5aaf51ee5395fed8ababae66c06f6f4",
+      "upstream_sha256": "54213394ff85c1fc94d5441efa08d7f7f7f446e35b9e8ba22e9576dcf178f24f"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/interfaces/contracts.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/interfaces/contracts.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "75b43dc90739235dd2e1ac98687e751ddf3c6d5aa8add1e9d5ead9be04bac0f6",
+      "upstream_sha256": "1fa48674b3b76de120c24c6ab160c1253f1194e86d6ad2904070963fc2688781"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/brace_clients.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/brace_clients.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "5810bd7147ea3023dd495060f3d596df724bd593a5961ff657f67698a7e5785e",
+      "upstream_sha256": "83c00af177962b06d6ffacebd7204c0c28b434b03939bd13752e2257bea0d60d"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/brace_flows.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/brace_flows.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "f244586db7c85cfb42fe2c6c77063615e9607bba63d7c010a8aee9dd7d5d6915",
+      "upstream_sha256": "ca62e965fcc7137587679c822aeee5fb45c5ca7444fe9944b862af9bf869d855"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/brace_tests.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/brace_tests.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "afb119804be23f765ada1de2091f8a323e5d33412043e0de293e25ed5dafc025",
+      "upstream_sha256": "71e45918e037482944b8dea564de7d6638cee85d8ff52f2bd8b361caf4d9b194"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/python_flows.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/python_flows.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "67e1b4c518374ef80aab4acd14eab6cd34affbeadc883fda0efa8aa5941e90c9",
+      "upstream_sha256": "c4950c3d04425d3b9e62e916bb86a5f554a95743dc6a781ca18d6c7937719b13"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/rust_flows.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/rust_flows.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "b003f2a3ad2ef59bb9d6827b25c028b78a4df073f41dbcf7dda26d012590c032",
+      "upstream_sha256": "ba7e5aa9ac347da96981baad8518f2d7a45449af62c2167debb94dd2bef09d3e"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/rust_test_clients.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/rust_test_clients.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "42de1d4540ffce52ad84101f203db208ec60d96d6881d3574a0079e9e926c6fb",
+      "upstream_sha256": "b237014e9fb3ea0b0e45acd9fd2626060568662d5583d3266ce9a0d4f2e61e3b"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/source_http/brace_clients/tests.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/source_http/brace_clients/tests.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "3cf952134ce2e1ef2fb8572b82f5f7908649b1ddfbc9a868e2b732eac8c5d648",
+      "upstream_sha256": "1e594d19e4934532b8010d90508a281cdc9d3828d574e9d9040ec90cdba0cd9a"
+    },
+    {
+      "path": "crates/code-system-graph-model/src/lib.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-model/src/lib.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "0e2bd90f6eb181871c0f5aa768f8673eb00f64cf0767e0040380056100d758f7",
+      "upstream_sha256": "187f0daccabc3155b20b5f18b9ca7637c3d7c59c31ad05dfce219e9ab0402f3a"
+    },
+    {
+      "path": "crates/code-system-graph-model/src/read_context.rs",
+      "status": "added",
+      "upstream_file": null,
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "134647dd457b6c95e8b9bd9e5024ba95c6de8dd7d786365527f3a38eb4bfc553",
+      "upstream_sha256": null
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/migrations/0001_initial.sql",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/migrations/0001_initial.sql",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "-- Modified from Code System Graph v1.2.1; local schema/property/provenance hardening. See VENDOR.md.",
+      "sha256": "995cab15a5f1bb55340d3dbd7e0a53c5a31b978d4ca903c5ebad45354dce464b",
+      "upstream_sha256": "717e01d1e82d03dc7fd77b07f6dc3f56457c7d081bfa33d14a79e8df10acf17c"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/access_lock.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/src/access_lock.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "100fb321dd029d83c13e17586aa12fecc7e5df3d2b79c1138d9b3b7e29b27c3d",
+      "upstream_sha256": "5696ae86cbddbcfc5d22b61fd18c231470034ec394dd367ca638772f182a8ffa"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/backup_restore.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/src/backup_restore.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "4f75ea7ad51211fc351dbb97e120b3440332bbbe226f5ebeae52aa628377a257",
+      "upstream_sha256": "6dbc8767efeab058e9f5e28df0dea36ea3b07707a4c8b32a3a727406290746cc"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/file_permissions.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/src/file_permissions.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "cdc8c7aa46cc60c1dc9ca0749fb353e303f8f98064ef004b6e8a72d1dc33ed54",
+      "upstream_sha256": "32cf10b4f54b6456e8a02161796bf642f09fb2223cc675f97cbb9bf1f1b5ac20"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/lib.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/src/lib.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "08ae9f92a823130ce07da3ad1cd2a577f8cf44251a83af3b436eb307b3a4a80a",
+      "upstream_sha256": "7425fc2f604301db20e1a17fe50c80e53e7e366a13a32ede95b2e5b4ff6dbb02"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/publication.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/src/publication.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "e74629324a516486fead5317740aeb85be13cfc8454ed14f0d2084f22e60d575",
+      "upstream_sha256": "5fc883af8712ad7726db809668d2f2b25ad5d2a0e9c85d4d90344d12e5bd580f"
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/read_context.rs",
+      "status": "added",
+      "upstream_file": null,
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "f34052fb8a4d9c1a2e2e01748c71e59f214c240ad79b946487240ba50fe0bd1a",
+      "upstream_sha256": null
+    },
+    {
+      "path": "crates/code-system-graph-store-sqlite/src/backup_restore/tests.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-store-sqlite/src/backup_restore/tests.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; local hardening, formatting and standalone packaging. See VENDOR.md.",
+      "sha256": "13c90a285b6cab9c8bb47037509cce9e372869811cd708dd80431d591026b731",
+      "upstream_sha256": "a1a223ca953be2999830a231371979d80532c2b4e18b79fd64b0bf97c8147a73"
+    },
+    {
+      "path": "crates/code-system-graph-core/Cargo.toml",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/Cargo.toml",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "# Modified from Code System Graph v1.2.1; optional Terraform/HCL extraction for explicit build profiles. See VENDOR.md.",
+      "sha256": "f66eca432b307336073e23e1ed55c370a4732afc0f8b45f521fadd8b086c567e",
+      "upstream_sha256": "c9f298007f02eefb3ca4929d238e48e3176244937b7bfa492ea8ba38623c2453"
+    },
+    {
+      "path": "crates/code-system-graph-core/src/infrastructure.rs",
+      "status": "modified",
+      "upstream_file": "https://github.com/dertin/code-system-graph/blob/d161502d8e6db606345f998574df10637591f9e8/crates/code-system-graph-core/src/infrastructure.rs",
+      "upstream_license": "Apache-2.0",
+      "copyright": "Original per-file notices and root NOTICE retained; no new copyright holder invented",
+      "local_modification_notice": "// Modified from Code System Graph v1.2.1; optional Terraform/HCL extraction with explicit disabled errors. See VENDOR.md.",
+      "sha256": "f706eba7238269275d0cb936a273c56a86aa375743946375f12656ac19bd48d1",
+      "upstream_sha256": "d1be2a8ee5b5a1c310b536c5cc256ade07f9b4bffc5551a9e8c80430e22eebb4"
+    }
+  ]
+}

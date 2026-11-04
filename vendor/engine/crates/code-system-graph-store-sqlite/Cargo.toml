@@ -1,0 +1,39 @@
+# Modified from Code System Graph v1.2.1; local hardening and standalone packaging. See VENDOR.md.
+# Modified 2026-11-03: security update to bundled SQLite via rusqlite 0.41.1.
+[package]
+name = "code-system-graph-store-sqlite"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+description = "Exact-schema SQLite persistence for Code System Graph."
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+readme.workspace = true
+keywords.workspace = true
+categories = ["database", "development-tools"]
+
+[dependencies]
+blake3 = "1.8.7"
+code-system-graph-model = { version = "1.2.1", path = "../code-system-graph-model" }
+rusqlite = { version = "0.41.1", features = ["backup", "bundled", "hooks"] }
+same-file = "1.0.6"
+serde_json = "1.0.151"
+sysinfo = { version = "0.39.6", default-features = false, features = ["system"] }
+tempfile = "3.27.0"
+thiserror = "2.0.21"
+
+[lints]
+workspace = true
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2.190"
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61.2", features = [
+    "Win32_Foundation",
+    "Win32_Security",
+    "Win32_Security_Authorization",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Threading",
+] }

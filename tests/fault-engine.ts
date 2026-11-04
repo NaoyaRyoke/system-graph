@@ -1,0 +1,4 @@
+import { createInterface } from 'node:readline';
+const mode=process.argv[2];for await(const line of createInterface({input:process.stdin})){
+ const r=JSON.parse(line) as {id:string;operation:string};if(mode==='crash')process.exit(7);if(mode==='timeout'||mode==='slow-query'&&r.operation==='query'){await new Promise(r=>setTimeout(r,60000));continue;}if(mode==='malformed'){process.stdout.write('bad-json\n');continue;}if(mode==='oversize'){process.stdout.write('x'.repeat(10000)+'\n');continue;}
+ const result=r.operation==='health'?{status:'alive'}:{api_version:'1.0',engine_contract:'1.2.2-hardening.1',graph_schema:'schema:test',operations:mode==='unsupported'?[]:['query','health','capabilities'],environment_pre_filter:true,explicit_false:true,management:false,optional_new_field:123};process.stdout.write(JSON.stringify({api_version:mode==='version'?'9.0':'1.0',id:r.id,ok:true,result})+'\n');}

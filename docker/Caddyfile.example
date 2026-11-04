@@ -1,0 +1,15 @@
+# Operator template; no ACME/public certificate request in this example.
+# Replace the reserved hostname and provision certificate/key outside the image.
+https://graph.example.invalid {
+    tls /run/secrets/tls_cert /run/secrets/tls_key
+    request_body {
+        max_size 16KB
+    }
+    reverse_proxy graph:3000 {
+        header_up Host graph.example.invalid
+        header_up -Forwarded
+        header_up -X-Forwarded-For
+        header_up -X-Forwarded-Host
+        header_up -X-Forwarded-Proto
+    }
+}

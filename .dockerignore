@@ -1,0 +1,12 @@
+artifacts
+target
+node_modules
+dist
+.git
+.local
+*.db
+*.db-*
+*.key
+*.pem
+.env*
+__pycache__

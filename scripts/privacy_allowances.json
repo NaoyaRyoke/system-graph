@@ -1,0 +1,7 @@
+{
+  "licenses/dependencies/rust-toolchain/COPYRIGHT.html": {
+    "category": "home_path",
+    "sha256": "d518ae2d76bc7a1f0cbf0069b8deafb56efc39c2614cab74a859ef0b467f8373",
+    "reason": "Official Rust 1.99.1 COPYRIGHT.html contains a public crates.io URL for the home crate (version 0.5.12), not a user home directory. Preserve authoritative legal text; all operator deny terms still apply."
+  }
+}

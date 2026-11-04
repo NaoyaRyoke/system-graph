@@ -1,0 +1,2312 @@
+{
+  "review_date": "2026-11-04",
+  "review_before": "2026-11-11",
+  "runtime_manifest_sha256": "85c64603dc53024092fa2b76088b349133ef5f12ef7a684c847455a048b74a13",
+  "old_raw_severity_counts": {
+    "critical": 1,
+    "high": 17,
+    "medium": 39,
+    "low": 7,
+    "unrated": 20
+  },
+  "counts": {
+    "FIXED": 57,
+    "NOT AFFECTED": 23,
+    "ACCEPTED WITH EVIDENCE": 4,
+    "BLOCKER": 0
+  },
+  "blocking_ids": [],
+  "reviews": [
+    {
+      "id": "DEBIAN-CVE-2005-2541",
+      "cve": "CVE-2005-2541",
+      "packages_before": [
+        {
+          "name": "tar",
+          "version": "1.35+dfsg-3.1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Tar 1.15.1 does not properly warn the user when extracting setuid or setgid files, which may allow local users or remote attackers to gain privileges.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2005-2541"
+      ],
+      "primary_record_sha256": "4deab325beb1986abbf6198ee9224ac5575d18dac24933ef81b007080a056d56"
+    },
+    {
+      "id": "DEBIAN-CVE-2007-5686",
+      "cve": "CVE-2007-5686",
+      "packages_before": [
+        {
+          "name": "shadow",
+          "version": "1:4.17.4-2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "initscripts in rPath Linux 1 sets insecure permissions for the /var/log/btmp file, which allows local users to obtain sensitive information regarding authentication attempts.  NOTE: because sshd detects the insecure permissions and does not log certain events, this also prevents sshd from logging failed authentication attempts by remote attackers.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2007-5686"
+      ],
+      "primary_record_sha256": "2b06fc43a906748b3768aa93b2f8a60b1ecfc489ac42f1c6dde94c3d26bcd3cf"
+    },
+    {
+      "id": "DEBIAN-CVE-2010-4756",
+      "cve": "CVE-2010-4756",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires attacker-controlled libc glob patterns. No glob import in either runtime binary, shell/FTP/glob tool, user regular expression or path expansion endpoint; native lexical query only.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "The glob implementation in the GNU C Library (aka glibc or libc6) allows remote authenticated users to cause a denial of service (CPU and memory consumption) via crafted glob expressions that do not match any pathnames, as demonstrated by glob expressions in STAT commands to an FTP daemon, a different vulnerability than CVE-2010-2632.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2010-4756"
+      ],
+      "primary_record_sha256": "8bd79ae203dcb7dfc8e5f83f6c42a2cd157e4bd3d6f297a486e91c761e902c2e"
+    },
+    {
+      "id": "DEBIAN-CVE-2011-3374",
+      "cve": "CVE-2011-3374",
+      "packages_before": [
+        {
+          "name": "apt",
+          "version": "3.0.3"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "It was found that apt-key in apt, all versions, do not correctly validate gpg keys with the master keyring, leading to a potential man-in-the-middle attack.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2011-3374"
+      ],
+      "primary_record_sha256": "f471e64dc4d8527d09e3f58e80e04477b7944b99daa7c633346b29628869b0fe"
+    },
+    {
+      "id": "DEBIAN-CVE-2011-4116",
+      "cve": "CVE-2011-4116",
+      "packages_before": [
+        {
+          "name": "perl",
+          "version": "5.40.1-6+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "_is_safe in the File::Temp module for Perl does not properly handle symlinks.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2011-4116"
+      ],
+      "primary_record_sha256": "99aa3e76595b701b4e51ff45ce6ed5b8736ba62c117270faf573f18ee7df83c2"
+    },
+    {
+      "id": "DEBIAN-CVE-2013-4392",
+      "cve": "CVE-2013-4392",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "systemd, when updating file permissions, allows local users to change the permissions and SELinux security contexts for arbitrary files via a symlink attack on unspecified files.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2013-4392"
+      ],
+      "primary_record_sha256": "638b9ab04584bbb1aa5bcd4b60c60512741a20bfe478fbc22ba646cdf0b617b6"
+    },
+    {
+      "id": "DEBIAN-CVE-2017-18018",
+      "cve": "CVE-2017-18018",
+      "packages_before": [
+        {
+          "name": "coreutils",
+          "version": "9.7-3"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "In GNU Coreutils through 8.29, chown-core.c in chown and chgrp does not prevent replacement of a plain file with a symlink during use of the POSIX \"-R -L\" options, which allows local users to modify the ownership of arbitrary files by leveraging a race condition.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2017-18018"
+      ],
+      "primary_record_sha256": "ecedaaa426db23f452972a56e2324e39103a752e2ddf0709124c6229cd249750"
+    },
+    {
+      "id": "DEBIAN-CVE-2018-20796",
+      "cve": "CVE-2018-20796",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "POSIX regexec backreference recursion. No regexec/regcomp import or grep/shell; native Rust lexical search and JavaScript regular expressions do not call this POSIX interface.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "In the GNU C Library (aka glibc or libc6) through 2.29, check_dst_limits_calc_pos_1 in posix/regexec.c has Uncontrolled Recursion, as demonstrated by '(\\227|)(\\\\1\\\\1|t1|\\\\\\2537)+' in grep.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2018-20796"
+      ],
+      "primary_record_sha256": "69ed91b0163676266bbfe2c9c70948ad1e088069638d6f97f28b79d59ba040cd"
+    },
+    {
+      "id": "DEBIAN-CVE-2019-1010022",
+      "cve": "CVE-2019-1010022",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "critical",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "unresolved",
+      "mitigation_and_rationale": "Upstream bug 22850 comment 3 explicitly identifies post-attack mitigation hardening, not an independently triggerable security defect. TCB/canary design exists on x86_64; no patch/removal is claimed. Triggering this chain first requires an independent stack overwrite, which this finding does not provide. Debian urgency unimportant agrees with upstream. Raw scanner Critical is retained; standalone Critical blocker count differs from raw CVSS.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may bypass stack guard protection. The component is: nptl. The attack vector is: Exploit stack buffer overflow vulnerability and use this bypass vulnerability to bypass stack guard. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.",
+      "evidence": [
+        "https://sourceware.org/bugzilla/rest/bug/22850/comment",
+        "https://security-tracker.debian.org/tracker/CVE-2019-1010022"
+      ],
+      "primary_record_sha256": "85737ba61e3979715bf9f3e7e1ccdc44f356962604ba01108146cb6064f147e8",
+      "residual_risk": "If a separate stack-corruption vulnerability is found, assess the mitigation-bypass chain anew; not a claim that memory-corruption bugs are impossible.",
+      "fixed_version": "No upstream fix; hardening enhancement remains unconfirmed"
+    },
+    {
+      "id": "DEBIAN-CVE-2019-1010023",
+      "cve": "CVE-2019-1010023",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Attack requires running ldd on supplied ELF files. Runtime has no ldd, shell, uploaded binary execution or configurable child command; only the fixed engine is spawned.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "GNU Libc current is affected by: Re-mapping current loaded library with malicious ELF file. The impact is: In worst case attacker may evaluate privileges. The component is: libld. The attack vector is: Attacker sends 2 ELF files to victim and asks to run ldd on it. ldd execute code. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2019-1010023"
+      ],
+      "primary_record_sha256": "5aa5070a270e3dc7cce9a9ccff1dbf7680e282861b718b5e9e05aa9287a42464"
+    },
+    {
+      "id": "DEBIAN-CVE-2019-1010024",
+      "cve": "CVE-2019-1010024",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "conditional accepted limitation",
+      "mitigation_and_rationale": "Upstream treats thread-stack/heap ASLR mitigation bypass as non-security; retain as an accepted limitation, not a claimed code fix. No arbitrary address/stack inspection tool.",
+      "disposition": "ACCEPTED WITH EVIDENCE",
+      "source_details": "GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may bypass ASLR using cache of thread stack and heap. The component is: glibc. NOTE: Upstream comments indicate \"this is being treated as a non-security bug and no real threat.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2019-1010024"
+      ],
+      "primary_record_sha256": "1b34b5141445f483e8275e7876c3bd262fc69e2cedf3539e7904fd06d947bdc6"
+    },
+    {
+      "id": "DEBIAN-CVE-2019-1010025",
+      "cve": "CVE-2019-1010025",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "conditional accepted limitation",
+      "mitigation_and_rationale": "Vendor disputes ASLR bypass alone as a vulnerability; keep evidence and raw rating. No arbitrary memory inspection endpoint; separate memory-corruption defects are not waived.",
+      "disposition": "ACCEPTED WITH EVIDENCE",
+      "source_details": "GNU Libc current is affected by: Mitigation bypass. The impact is: Attacker may guess the heap addresses of pthread_created thread. The component is: glibc. NOTE: the vendor's position is \"ASLR bypass itself is not a vulnerability.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2019-1010025"
+      ],
+      "primary_record_sha256": "38f4a9e0a0fbbab63edcb95068a69fb5d02807505fcdc9114f218e956d631e01"
+    },
+    {
+      "id": "DEBIAN-CVE-2019-9192",
+      "cve": "CVE-2019-9192",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Distinct POSIX regexec backreference recursion case. No regexec/regcomp import and no user-supplied POSIX patterns; no grep/shell binary.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "In the GNU C Library (aka glibc or libc6) through 2.29, check_dst_limits_calc_pos_1 in posix/regexec.c has Uncontrolled Recursion, as demonstrated by '(|)(\\\\1\\\\1)*' in grep, a different issue than CVE-2018-20796. NOTE: the software maintainer disputes that this is a vulnerability because the behavior occurs only with a crafted pattern",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2019-9192"
+      ],
+      "primary_record_sha256": "a183ee4987a8efd4d9103bdde188c52812e38f22790e73358326660fb90829cf"
+    },
+    {
+      "id": "DEBIAN-CVE-2021-45346",
+      "cve": "CVE-2021-45346",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A Memory Leak vulnerability exists in SQLite Project SQLite3 3.35.1 and 3.37.0 via maliciously crafted SQL Queries (made via editing the Database File), it is possible to query a record, and leak subsequent bytes of memory that extend beyond the record, which could let a malicious user obtain sensitive information. NOTE: The developer disputes this as a vulnerability stating that If you give SQLite a corrupted database file and submit a query against the database, it might read parts of the database that you did not intend or expect.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2021-45346"
+      ],
+      "primary_record_sha256": "e92f2120b6f07b235744851c3713c0ada079425d47ea426de912fd897276c991"
+    },
+    {
+      "id": "DEBIAN-CVE-2022-0563",
+      "cve": "CVE-2022-0563",
+      "packages_before": [
+        {
+          "name": "util-linux",
+          "version": "2.41.5-0+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in the util-linux chfn and chsh utilities when compiled with Readline support. The Readline library uses an \"INPUTRC\" environment variable to get a path to the library config file. When the library cannot parse the specified file, it prints an error message containing data from the file. This flaw allows an unprivileged user to read root-owned files, potentially leading to privilege escalation. This flaw affects util-linux versions prior to 2.37.4.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2022-0563"
+      ],
+      "primary_record_sha256": "60074ebf910b31d23e025505a34cb209eb1d632beb275f6f049c59fed50d850a"
+    },
+    {
+      "id": "DEBIAN-CVE-2023-31437",
+      "cve": "CVE-2023-31437",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "An issue was discovered in systemd 253. An attacker can modify a sealed log file such that, in some views, not all existing and sealed log messages are displayed. NOTE: the vendor reportedly sent \"a reply denying that any of the finding was a security vulnerability.\"",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2023-31437"
+      ],
+      "primary_record_sha256": "a21886ad31887d558784b13746514b586e4422b831a73dba4ae32e7191be22ee"
+    },
+    {
+      "id": "DEBIAN-CVE-2023-31438",
+      "cve": "CVE-2023-31438",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "An issue was discovered in systemd 253. An attacker can truncate a sealed log file and then resume log sealing such that checking the integrity shows no error, despite modifications. NOTE: the vendor reportedly sent \"a reply denying that any of the finding was a security vulnerability.\"",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2023-31438"
+      ],
+      "primary_record_sha256": "226008833d7bf1a7bfa75a1ac2c23f2d2215d706e7ffe407d086dedb21edaf1d"
+    },
+    {
+      "id": "DEBIAN-CVE-2023-31439",
+      "cve": "CVE-2023-31439",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "An issue was discovered in systemd 253. An attacker can modify the contents of past events in a sealed log file and then adjust the file such that checking the integrity shows no error, despite modifications. NOTE: the vendor reportedly sent \"a reply denying that any of the finding was a security vulnerability.\"",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2023-31439"
+      ],
+      "primary_record_sha256": "1c9cabfd734329a9c42657c5af1d4259a2d85f6d0a2368c6262b28b1265d1107"
+    },
+    {
+      "id": "DEBIAN-CVE-2024-56433",
+      "cve": "CVE-2024-56433",
+      "packages_before": [
+        {
+          "name": "shadow",
+          "version": "1:4.17.4-2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "shadow-utils (aka shadow) 4.4 through 4.17.0 establishes a default /etc/subuid behavior (e.g., uid 100000 through 165535 for the first user account) that can realistically conflict with the uids of users defined on locally administered networks, potentially leading to account takeover, e.g., by leveraging newuidmap for access to an NFS home directory (or same-host resources in the case of remote logins by these local network users). NOTE: it may also be argued that system administrators should not have assigned uids, within local networks, that are within the range that can occur in /etc/subuid.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2024-56433"
+      ],
+      "primary_record_sha256": "3b73a30497f71ee055d175ec3436bb1e638a299957f66b49ffd4ce33de569996"
+    },
+    {
+      "id": "DEBIAN-CVE-2025-5278",
+      "cve": "CVE-2025-5278",
+      "packages_before": [
+        {
+          "name": "coreutils",
+          "version": "9.7-3"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in GNU Coreutils. The sort utility's begfield() function is vulnerable to a heap buffer under-read. The program may access memory outside the allocated buffer if a user runs a crafted command using the traditional key format. A malicious input could lead to a crash or leak sensitive data.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2025-5278"
+      ],
+      "primary_record_sha256": "cbd6bb574bc5756afb3e72ccb627b825ccf32c98daa29d8b158a06712b568dc8"
+    },
+    {
+      "id": "DEBIAN-CVE-2025-6141",
+      "cve": "CVE-2025-6141",
+      "packages_before": [
+        {
+          "name": "ncurses",
+          "version": "6.5+20250216-2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A vulnerability has been found in GNU ncurses up to 6.5-20250322 and classified as problematic. This vulnerability affects the function postprocess_termcap of the file tinfo/parse_entry.c. The manipulation leads to stack-based buffer overflow. The attack needs to be approached locally. Upgrading to version 6.5-20250329 is able to address this issue. It is recommended to upgrade the affected component.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2025-6141"
+      ],
+      "primary_record_sha256": "7753fd195b0177a45db02f697d0d2ccd9fdca1ad0cd879e617d24b1fd2b1273a"
+    },
+    {
+      "id": "DEBIAN-CVE-2025-69720",
+      "cve": "CVE-2025-69720",
+      "packages_before": [
+        {
+          "name": "ncurses",
+          "version": "6.5+20250216-2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "The infocmp command-line tool in ncurses before 6.5-20251213 has a stack-based buffer overflow in analyze_string in progs/infocmp.c.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2025-69720"
+      ],
+      "primary_record_sha256": "f6f89d47d6df458132e5363a617430440c168c7736a8894b7e13c8816691cb9a"
+    },
+    {
+      "id": "DEBIAN-CVE-2025-70873",
+      "cve": "CVE-2025-70873",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "An information disclosure issue in the zipfileInflate function in the zipfile extension in SQLite v3.51.1 and earlier allows attackers to obtain heap memory via supplying a crafted ZIP file.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2025-70873"
+      ],
+      "primary_record_sha256": "cdd945c89fef9fdcd86b887e61ed69b988310175c55f01490711d299719f8955"
+    },
+    {
+      "id": "DEBIAN-CVE-2025-8941",
+      "cve": "CVE-2025-8941",
+      "packages_before": [
+        {
+          "name": "pam",
+          "version": "1.7.0-5"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in linux-pam. The pam_namespace module may improperly handle user-controlled paths, allowing local users to exploit symlink attacks and race conditions to elevate their privileges to root. This CVE provides a \"complete\" fix for CVE-2025-6020.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2025-8941"
+      ],
+      "primary_record_sha256": "f026a0dc0cf8d94f03ba5c70d8764b237b1004a4bbd1721613d05109e5ea5ff4"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-102010",
+      "cve": "CVE-2026-102010",
+      "packages_before": [
+        {
+          "name": "gcc-14",
+          "version": "14.2.0-19"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19",
+          "source": "gcc-14",
+          "sourceVersion": "14.2.0-19",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "unresolved",
+      "mitigation_and_rationale": "Upstream fix changes only GNU PBDS header binary_heap erase_if. Exact Node 24.22.2 source has no PBDS use in runtime components; full unstripped Node symbol table has zero __gnu_pbds occurrences. Rust code is not C++ and cannot instantiate the header. No compiler/header/plugin/native-addon endpoint exists. Runtime libstdc++ source-package match alone does not include this instantiated algorithm.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A flaw was found in GCC. When an application calls the erase_if function on a binary heap priority queue in libstdc++, the library reallocates storage but fails to update its internal entry pointer. An attacker capable of triggering this operation can exploit this use-after-free condition, leading to a Denial of Service (DoS) via an application crash or potential memory corruption.",
+      "evidence": [
+        "https://github.com/gcc-mirror/gcc/commit/aaa8351f4d2e636f9680a1f0a8ebc2f0a60611e6",
+        "https://security-tracker.debian.org/tracker/CVE-2026-102010"
+      ],
+      "primary_record_sha256": "ec98dbfa9c4ffaaa3485828d24fbd5dba2b9b139ff42660d1db5ce8f64443ec8",
+      "residual_risk": "Reassess any new native addon, compiler/template use, Node build or runtime executable.",
+      "fixed_version": "gcc-14 14.4.0-3 (forky/sid); no fixed trixie package listed"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-102473",
+      "cve": "CVE-2026-102473",
+      "packages_before": [
+        {
+          "name": "dash",
+          "version": "0.5.12-12"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in dash. When built without libc fnmatch, the internal pmatch() matcher implements * by unbounded recursion over candidate positions. A local user who can plant filenames, or otherwise feed that matcher, can make a short multi-star pattern such as *.*.*.*.*.tar.gz consume excessive CPU.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-102473"
+      ],
+      "primary_record_sha256": "8f32f150a88e8aeb5fd4daa9f6fb86d9f023cf9ce4c271a9f3529bb932d86083"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-102474",
+      "cve": "CVE-2026-102474",
+      "packages_before": [
+        {
+          "name": "dash",
+          "version": "0.5.12-12"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in dash. The printf builtin reserves four bytes before converting a Unicode \\u or \\U escape, but the multi-byte token can need five or six bytes. A local user who can supply such an escape to dash printf or echo %b, including through dash -c and a positional argument, can write one or two bytes past that reservation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-102474"
+      ],
+      "primary_record_sha256": "fcbced1a2d69ce2a08e866ce3fff8c86718f8b127f281e5b719e905cb4968971"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-114690",
+      "cve": "CVE-2026-114690",
+      "packages_before": [
+        {
+          "name": "gcc-14",
+          "version": "14.2.0-19"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19",
+          "source": "gcc-14",
+          "sourceVersion": "14.2.0-19",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "unresolved",
+      "mitigation_and_rationale": "Patch changes GNU parallel-mode search header. Matching official Node source and full symbol table have no __gnu_parallel use; build files do not enable _GLIBCXX_PARALLEL. No libgomp/OpenMP dependency in ELF closure and no C++ execution endpoint. Rust lexical query is not GNU parallel std::search.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A flaw was found in GCC. An out-of-bounds memory access vulnerability exists in the libstdc++ parallel search implementation due to an undersized internal buffer. A local attacker can exploit this flaw by providing crafted search data to an application compiled with parallel mode, causing the process to crash and leading to a Denial of Service (DoS).",
+      "evidence": [
+        "https://github.com/gcc-mirror/gcc/commit/c1f32b67510f6f9998deadaef5090b6663adb979",
+        "https://security-tracker.debian.org/tracker/CVE-2026-114690"
+      ],
+      "primary_record_sha256": "0ddcda22329a1f3c8ee7aebbf7126a90390d072820697f72a0849a264f5163f5",
+      "residual_risk": "New OpenMP/parallel-mode code or native plugins invalidate this assessment.",
+      "fixed_version": "Upstream main patch available; Debian gcc-14 trixie/forky/sid remains unfixed in current tracker"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-114691",
+      "cve": "CVE-2026-114691",
+      "packages_before": [
+        {
+          "name": "gcc-14",
+          "version": "14.2.0-19"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19",
+          "source": "gcc-14",
+          "sourceVersion": "14.2.0-19",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "unresolved",
+      "mitigation_and_rationale": "Header constructor overflow requires a size/range near SIZE_MAX. Matching Node source runtime vector<bool> uses: V8 wasm exported_tags sized by validated module tag count, and debug-only tracing nesting_stack push/pop. No remote JS/Wasm/module/compiler interface is exposed; MCP JSON is data only, body/output/node-count limits bound lengths. Wasm tag count is 32-bit bounded, not size_t-near-maximum; debug push_back does not call the affected attacker-sized constructor. Full binary contains vector<bool> helper, so absence is NOT claimed.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A flaw was found in the libstdc++ component of GCC. An attacker who can provide an excessively large element count to a boolean vector (std::vector<bool>) constructor can trigger an integer wrap during internal memory calculations. This issue leaves the container in an inconsistent state, leading to out-of-bounds memory access and resulting in an application crash or a Denial of Service (DoS) during subsequent operations.",
+      "evidence": [
+        "https://github.com/gcc-mirror/gcc/commit/2fd8866591b5aea7098835f80ab7e176382175ae",
+        "https://nodejs.org/dist/v24.22.2/SHASUMS256.txt",
+        "https://security-tracker.debian.org/tracker/CVE-2026-114691"
+      ],
+      "primary_record_sha256": "45253a2bfe74f13e1f8ad326949821cfc8ea6453fa818ba6994d3f5a3f9a3399",
+      "residual_risk": "Adding eval/JS/Wasm execution, inspector access, native addons or attacker-selected native container sizes reopens review.",
+      "fixed_version": "Upstream main patch available; no fixed Debian gcc-14 version listed"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-115455",
+      "cve": "CVE-2026-115455",
+      "packages_before": [
+        {
+          "name": "gcc-14",
+          "version": "14.2.0-19"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19",
+          "source": "gcc-14",
+          "sourceVersion": "14.2.0-19",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "unresolved",
+      "mitigation_and_rationale": "Patch fixes wide-character istream extraction into std::bitset. Node full symbols have no basic_istream<wchar_t> extraction; matching runtime source bitsets are bookkeeping/bit shifts/output, not wide-stream extraction. No C++ stream input endpoint or executable repository/graph contents. Header template must be instantiated by a caller; shared libstdc++ presence is insufficient.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A flaw was found in GCC libstdc++. When an application extracts data into a bitset from a wide-character stream, internal stack memory allocation fails to properly account for character size and alignment. An attacker capable of supplying crafted input to an affected application could trigger a stack-based buffer overflow leading denial of service (DoS).",
+      "evidence": [
+        "https://github.com/gcc-mirror/gcc/commit/5d419c69ce2e6b86d7da75f18736904885674219",
+        "https://security-tracker.debian.org/tracker/CVE-2026-115455"
+      ],
+      "primary_record_sha256": "99a31b4a4b92b90bac63ff6c9da8b78f2af362c45e39e051a147149bf2764075",
+      "residual_risk": "Recheck new wide-stream bitset use or native libraries; not a statement that all bitsets are absent.",
+      "fixed_version": "Upstream main patch available; no fixed Debian gcc-14 version listed"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119371",
+      "cve": "CVE-2026-119371",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 contains a stack exhaustion vulnerability that allows attackers to bypass the SQLITE_LIMIT_EXPR_DEPTH nesting limit because common table expressions are not counted against it. Attackers can supply a WITH clause chaining tens of thousands of CTEs, via plain SQL or a view in an untrusted database file, causing unbounded selectExpander() recursion that crashes the process.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119371"
+      ],
+      "primary_record_sha256": "fbba6342438ceed897aa66a49de9fe53933494100709cb631c9e466b841d0d37"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119372",
+      "cve": "CVE-2026-119372",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 built with FTS3/FTS4 and SQLITE_ENABLE_FTS3_PARENTHESIS contains a use-after-free vulnerability in fts3BestSnippet() caused by dangling cached position-list pointers. Attackers can run a full-text MATCH query combining OR and NEAR operators with snippet() to read freed heap memory and crash the process.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119372"
+      ],
+      "primary_record_sha256": "617dff248a8a5bac61b5dbe231e0d6dd244c3fa0943c7f60f9d7bd328d66aa51"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119373",
+      "cve": "CVE-2026-119373",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 built with FTS5 contains a heap buffer overflow in fts5MergeRowidLists() that undersizes the output buffer when merging detail=none prefix doclists. Attackers who can populate a detail=none FTS5 table with negative rowids and run a prefix MATCH query can write past the allocation, corrupting heap memory and crashing the process.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119373"
+      ],
+      "primary_record_sha256": "71e3848e23749e236f0e07d9dc1366553f5b6dc41629155340dec3e661849c4c"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119374",
+      "cve": "CVE-2026-119374",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 built with FTS5 contains a heap buffer overflow in fts5DoSecureDelete() that allows attackers to write past the leaf page buffer via crafted footer key offsets. Attackers can supply a database file with a corrupted FTS5 index that, when deleted from with secure-delete enabled, corrupts heap memory and crashes the application.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119374"
+      ],
+      "primary_record_sha256": "61786b304240f8f3f3559ecae12ed3de998677c35f962f1cdc3964562fbba9e2"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119375",
+      "cve": "CVE-2026-119375",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 contains an information disclosure vulnerability that allows attackers to read uninitialized page-cache memory by supplying a WAL file with an undersized page size. Attackers can craft a database and WAL file whose oversized record payload makes queries like substr() return stale bytes, disclosing other table rows and internal pointers.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119375"
+      ],
+      "primary_record_sha256": "2d286f85820548390da02be57a55a4504092cb4e4b6fb16c56a5b5878364592e"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119376",
+      "cve": "CVE-2026-119376",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 contains a stack exhaustion vulnerability that allows attackers to bypass the SQLITE_LIMIT_EXPR_DEPTH limit by chaining COLLATE postfix operators. Attackers can supply roughly 175,000 chained COLLATE operators in SQL or an untrusted database view to trigger unbounded recursion in sqlite3WalkExprNN() and crash the process.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119376"
+      ],
+      "primary_record_sha256": "1a634a67b1a83fbadb79df980412195984ca447fbb7d561f078095ac920b0998"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119377",
+      "cve": "CVE-2026-119377",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 contains an authorization bypass vulnerability in lookupName() that invokes the authorizer only for the first joined table's USING column. Attackers able to submit SQL can query a shared USING column in a RIGHT or FULL JOIN to read columns denied via sqlite3_set_authorizer() SQLITE_READ restrictions.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119377"
+      ],
+      "primary_record_sha256": "4ce72d273265dd353c52fa5be2846245454d7427d589974738c88234cec49bd3"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119378",
+      "cve": "CVE-2026-119378",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 contains a use-after-free vulnerability in the R-Tree extension that allows attackers to make applications use freed heap memory by manipulating the %_node shadow table. Attackers can supply a database declaring %_node WITHOUT ROWID or with a RAISE(IGNORE) trigger so nodeWrite() hashes nodes as 0, crashing the process after node splits.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119378"
+      ],
+      "primary_record_sha256": "e98f3caa6539f249d3cb8908cac6808366ccaebe10d2433dcb2a222c2885fd9d"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119379",
+      "cve": "CVE-2026-119379",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 built with the session extension contains a heap buffer overflow vulnerability in sqlite3changeset_apply() that allows attackers to corrupt heap memory by supplying crafted changesets. Attackers can repeat a table name in a second changeset block with a larger column count, causing sessionUpdateFind() to memset past the undersized aUpdateMask allocation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119379"
+      ],
+      "primary_record_sha256": "4f259f97d956956dd110562c00b07572cb77fad5f1d4994e3668411a2d6634a3"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119586",
+      "cve": "CVE-2026-119586",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite command-line shell through 3.54.1 contains a command injection vulnerability in the .recover command that emits attacker-planted dot-commands stored in sqlite_schema.sql values verbatim. Attackers can craft a database whose schema holds a valid CREATE statement followed by a .shell or .system line, executing OS commands when victims pipe .recover output into sqlite3.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119586"
+      ],
+      "primary_record_sha256": "eaf437e901514c83f9622d8b571e6d52fb58f41ab92ccb7ec7121fcc311e0317"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-119591",
+      "cve": "CVE-2026-119591",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "SQLite before 3.54.0 contains a stack exhaustion vulnerability in countOfViewOptimization() that allows attackers to crash the host process via count(*) over a large multi-row VALUES clause. Attackers supplying SQL or a database file with a crafted view can trigger deeply nested TK_PLUS expressions whose recursive freeing in sqlite3ExprDeleteNN() exhausts the C stack, causing denial of service.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-119591"
+      ],
+      "primary_record_sha256": "b4cb02b300bed89ca3801f12fc7d800524ee8ed6692486503bc3648b14b191cc"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-15059",
+      "cve": "CVE-2026-15059",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Local unprivileged users can terminate arbitrary local processes via a systemd-oomd IPC API due to a missing path traversal validation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-15059"
+      ],
+      "primary_record_sha256": "5b5837eaa0b1869bbfb08e6306e95d021aec04d9ff53efcaa45c06ecd5274204"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-15534",
+      "cve": "CVE-2026-15534",
+      "packages_before": [
+        {
+          "name": "perl",
+          "version": "5.40.1-6+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Perl versions through 5.45.1 have out-of-bounds heap reads and writes during regular expression matching via an undersized superlinear cache in S_regmatch.  The regex engine's superlinear cache holds one bit per subject position for each participating WHILEM node, so the bit count is the subject length plus one times the number of nodes. Nothing checks that product for positive overflow of the signed 32-bit count: a 286331153 byte subject matched against a pattern with 15 participating nodes stores the count as 14, leaving a two byte cache. The cache is then indexed from the real match position and node number, so reads go past the end of the allocation, and on failure CACHEsayNO sets a bit past it.  A caller that matches an attacker controlled subject of this size against a pattern of this shape can crash the process or corrupt heap memory.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-15534"
+      ],
+      "primary_record_sha256": "83f948916e35d83f17fe7844e9b57f40913f91dc57de6ec5e43434032cf7bf7e"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-16742",
+      "cve": "CVE-2026-16742",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "systemd-homed contains a local privilege escalation bug via arbitrary system group addition to a local, logged in, homed-managed user",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-16742"
+      ],
+      "primary_record_sha256": "79b8b3ff062e318fe3a76542361008aaa5f9f4cef80c6d2e5be53da9becea6a4"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-18374",
+      "cve": "CVE-2026-18374",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires untrusted fopen mode with empty ,ccs= extension. Tool arguments never select fopen modes; fixed readonly SQLite/Node file APIs only, no gconv modules or arbitrary native code.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "Passing an effectively empty string to the `,ccs=` syntax extension of the mode argument in the `fopen` function in the GNU C Library version 2.45 or earlier may result in a heap buffer overflow when the mode string input to the function is attacker controlled.    This usage pattern is not seen in applications in common GNU/Linux distributions and applications that process user-supplied values for `ccs` should not pass them through without validation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-18374"
+      ],
+      "primary_record_sha256": "086d0400661969a86e950228163e4d7b37be752bca3c179bb824e011bdd81eb5"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-18477",
+      "cve": "CVE-2026-18477",
+      "packages_before": [
+        {
+          "name": "tar",
+          "version": "1.35+dfsg-3.1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A TOCTOU (Time-of-Check Time-of-Use) vulnerability in GNU tar's incremental dumpdir 'X' rename handling allows a local attacker with write access to a directory being backed up to influence the restore process if the attacker has access to the system where the restore is being performed. During restoration, files or directories may be created, renamed or overwritten outside the intended extraction directory. This could lead to unauthorized file modification or, in some cases, privilege escalation. Exploitation does not require the attacker to modify or craft the archive, and standard backup and restore workflows\u2014including extracting into a newly created directory without using the -P option do not mitigate the issue.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-18477"
+      ],
+      "primary_record_sha256": "4a6a9a78bfacb3f99fc7f00d5f2e929112770f36188d0a4fa995364c5b7cb674"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-18508",
+      "cve": "CVE-2026-18508",
+      "packages_before": [
+        {
+          "name": "tar",
+          "version": "1.35+dfsg-3.1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in GNU tar. When extracting an archive with the --one-top-level option, hardlink targets are not confined to the designated top-level directory and may resolve relative to the extraction working directory. A crafted archive can create hardlinks that escape the intended boundary and, when combined with a preexisting symbolic link under the working directory, may allow writing outside that boundary during a single extraction.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-18508"
+      ],
+      "primary_record_sha256": "e39b9f5988b6946b8a406b3f988494140d020de921d32a9ffa8625b6fed10aa7"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-19499",
+      "cve": "CVE-2026-19499",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires strfmon/strfmon_l padded currency formatting. Neither binary imports these functions. No C monetary-format API is reachable; Node Intl uses its bundled ICU.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "Calling strfmon and strfmon_l in the GNU C Library version 2.38 to 2.44 can write past the end of the caller-supplied output buffer when a conversion uses right-justified width padding.  Exploitation requires an application code path that calls strfmon or strfmon_l with right-justified width padding into a destination buffer that is large enough for the padding to succeed but too small for the internal memmove call. The field width or format may be attacker-influenced or a fixed susceptible pattern in the caller.  At the time of publication, no network-facing application impact is known.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-19499"
+      ],
+      "primary_record_sha256": "b35af03b4a857caa55d103120aac6ebcbb64faa2c85d1251e40bad468bd034b1"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-19542",
+      "cve": "CVE-2026-19542",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires tsearch/tdelete tree depth 40 and at least a million nodes. Neither binary imports tdelete; native graph limited to 12000 nodes and 60000 edges before hydration, with no graph mutation endpoint.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "Calling tdelete on a sufficiently deep tree in the GNU C Library version 2.1 to 2.44 may write one pointer past the end of an alloca-allocated array on the stack, which may crash the application.  The tdelete implementation keeps an explicit stack of parent nodes for rebalancing, which is grown as needed while descending the tree.  Two rebalancing branches push an additional entry without checking the capacity, and write past the array when the stack is exactly full. Triggering this requires a node at a depth of exactly 40 (or 40 plus a multiple of 20), which implies a tree with at least a million nodes, so an attacker must drive a large number of insertions and deletions through an application that uses tsearch and tdelete.  The written value is a pointer into a tree node and is not directly attacker controlled.  No affected application in common distributions has been identified.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-19542"
+      ],
+      "primary_record_sha256": "8cad11d594541e8f9244cb0cb4c52216d3d6dc6264b5798cd5ebf769bb6f1303"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-27171",
+      "cve": "CVE-2026-27171",
+      "packages_before": [
+        {
+          "name": "zlib",
+          "version": "1:1.3.dfsg+really1.3.1-1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "zlib before 1.3.2 allows CPU consumption via crc32_combine64 and crc32_combine_gen64 because x2nmodp can do right shifts within a loop that has no termination condition.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-27171"
+      ],
+      "primary_record_sha256": "35fbca55fb3b73f848e6b6cac61cc66dd2346ff5823464fdff4bc85271d537df"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-3184",
+      "cve": "CVE-2026-3184",
+      "packages_before": [
+        {
+          "name": "util-linux",
+          "version": "2.41.5-0+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in util-linux. Improper hostname canonicalization in the `login(1)` utility, when invoked with the `-h` option, can modify the supplied remote hostname before setting `PAM_RHOST`. A remote attacker could exploit this by providing a specially crafted hostname, potentially bypassing host-based Pluggable Authentication Modules (PAM) access control rules that rely on fully qualified domain names. This could lead to unauthorized access.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-3184"
+      ],
+      "primary_record_sha256": "a3b0f6bc38420336899b14bdc26b2dd23f7db568de6405affd7e84afebe13eb4"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-39113",
+      "cve": "CVE-2026-39113",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Buffer Overflow vulnerability in SQLite affected version source snapshots/builds containing Fossil check-in 8bdc0d485e3ad0c7a1e818da66f106951d496b05cbe61d12c2c448f2f24b6d5d (Git mirror 169f68ed88b34cb68f720191c64c058f2ccec508, 2026-03-11) and later snapshots/builds allows an attacker to cause a denial of service via the ext/misc/sqlar.c, sqlarUncompressFunc(), sqlar_uncompress(), sqlite3_value_int64(), sqlite3_malloc(int), uncompress() components",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-39113"
+      ],
+      "primary_record_sha256": "f7811a22c71bb3a79881c4fc60d447c3f32a88635518e2782cf2c90135424d2d"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-40228",
+      "cve": "CVE-2026-40228",
+      "packages_before": [
+        {
+          "name": "systemd",
+          "version": "257.13-1~deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "In systemd 259, systemd-journald can send ANSI escape sequences to the terminals of arbitrary users when a \"logger -p emerg\" command is executed, if ForwardToWall=yes is set.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-40228"
+      ],
+      "primary_record_sha256": "44a49067c41d15f237229f5d19f397b53cc668815e1cc0703ba385b0c94e5d62"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-42250",
+      "cve": "CVE-2026-42250",
+      "packages_before": [
+        {
+          "name": "bzip2",
+          "version": "1.0.8-6"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "bzip2 contains an off\u2011by\u2011one error in the bzip2recover utility. When processing a specially crafted file, the application performs an out\u2011of\u2011bounds write to a global buffer, resulting in memory corruption and a crash (denial of service).  This issue was fixed in bzip2 patch\u00a035d122a3df8b0cc4082a4d89fdc6ee99f375fe67",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-42250"
+      ],
+      "primary_record_sha256": "9ee9e65172f0672ce10464cb1726e00261b377172ae75bcf29347d81aeb4f36b"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-50812",
+      "cve": "CVE-2026-50812",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A NULL pointer dereference in the SQLite Session Extension in SQLite 3.53.1 and SQLite trunk builds before check-in e807d4e3798efd53 allows an attacker who can supply a malformed changeset blob to cause a denial of service. The issue occurs when sqlite3changeset_apply_v3() applies a corrupt changeset and reaches sqlite3_value_type() with a NULL sqlite3_value pointer.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-50812"
+      ],
+      "primary_record_sha256": "a3fcce348ee9627ee2e7f2290f55eb38d2b0aa4341312cd2439959786af6a840"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-50813",
+      "cve": "CVE-2026-50813",
+      "packages_before": [
+        {
+          "name": "sqlite3",
+          "version": "3.46.1-7+deb13u2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "An issue in SQLite before Fossil check-in 869a51ae84df allows a local attacker to obtain sensitive information via the Session Extension changeset concat/changegroup merge path",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-50813"
+      ],
+      "primary_record_sha256": "3b4bc06a67d9bee373880ecb77c706e7dbfb18572fc7c8e5c33dd577c5bd0aae"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-53910",
+      "cve": "CVE-2026-53910",
+      "packages_before": [
+        {
+          "name": "diffutils",
+          "version": "1:3.10-4"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "diff3\u00a0tool from GNU diffutils\u00a0is vulnerable to a heap\u2011based buffer overflow due to multiple signed integer overflows in line\u2011mapping calculations. Incorrect arithmetic in mapping line ranges can result in corrupted values being used for memory allocation and loop bounds. When processing crafted diff output, these overflows may cause the application to allocate insufficient memory and subsequently perform out\u2011of\u2011bounds writes during internal processing.\u00a0 An attacker who can control the output of the diff program used by diff3 (e.g. via --diff-program pointing to a malicious script) can trigger out-of-bounds writes, resulting in a crash and potentially remote code execution depending on the environment.   This issue has been fixed in commit 9ff04d5b84743e331e80b589335a52c5480d1815\u00a0  NOTE: The project maintainers claim that this is not a security issue. They state that the worst outcome this issue can cause is a crash of diff and that it cannot be used to escalate privileges.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-53910"
+      ],
+      "primary_record_sha256": "220a3913891fec5f8b6dec8e814db91d647852cba66a534182cd530874686abd"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-5435",
+      "cve": "CVE-2026-5435",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Deprecated ns_printrrf/ns_printrr/fp_nquery DNS printing, not normal resolver operation. Imports absent; no debugging DNS printing endpoint or resolver debugging tools.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "The deprecated functions ns_printrrf, ns_printrr and fp_nquery in the GNU C Library version 2.2 and newer fail to enforce the caller-supplied buffer length, and can result in an out-of-bounds write when printing TSIG records.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-5435"
+      ],
+      "primary_record_sha256": "811db335395c31d715811d26861303959ae0c62dd1268ab608e84eda13184126"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-54369",
+      "cve": "CVE-2026-54369",
+      "packages_before": [
+        {
+          "name": "acl",
+          "version": "2.3.2-2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "acl before version 2.4.0 contains a symlink traversal vulnerability in the libacl pathname-based functions acl_get_file(), acl_set_file(), acl_extended_file(), and acl_delete_def_file() that allows local attackers to escalate privileges by replacing any pathname component with a symbolic link. Attackers who control any component of a pathname processed by a privileged caller can redirect ACL read or write operations to arbitrary files or directories, enabling unauthorized manipulation of access control lists and local privilege escalation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-54369"
+      ],
+      "primary_record_sha256": "44324f3c81b32fab4d39741b5b58c8ec743b63f9a0369b844b6183f79899ff29"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-54370",
+      "cve": "CVE-2026-54370",
+      "packages_before": [
+        {
+          "name": "acl",
+          "version": "2.3.2-2"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "acl before version 2.4.0 contains a time-of-check to time-of-use (TOCTOU) race condition vulnerability that allows local attackers to escalate privileges by replacing a pathname component with a symbolic link between an lstat() check and subsequent symlink-following operations such as stat(), chown(), chmod(), acl_get_file(), and acl_set_file(). Attackers who control a pathname component can redirect file access control list operations to arbitrary files when getfacl, setfacl, or chacl is invoked by a privileged process over an attacker-controlled path, resulting in local privilege escalation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-54370"
+      ],
+      "primary_record_sha256": "2d694f47a1e1284bf5616ef9614ff28e506f9b4d675ba9d4d8e4bef2c277c5f4"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-54371",
+      "cve": "CVE-2026-54371",
+      "packages_before": [
+        {
+          "name": "attr",
+          "version": "1:2.5.2-3"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "attr before version 2.6.0 contains a symlink traversal vulnerability in the getfattr and setfattr utilities that allows local attackers to escalate privileges by replacing a pathname component with a symbolic link during directory hierarchy traversal. Attackers who control a pathname component can redirect getfattr and setfattr operations to arbitrary files by substituting a symlink, leading to local privilege escalation when getfattr or setfattr is invoked by a privileged process over an attacker-controlled path.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-54371"
+      ],
+      "primary_record_sha256": "29df3f753cbc35cedecb7bb408a2f730ecf3debf467a294dc007de82612672e5"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-54411",
+      "cve": "CVE-2026-54411",
+      "packages_before": [
+        {
+          "name": "pam",
+          "version": "1.7.0-5"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Linux-PAM through 1.7.2 contains an observable timing discrepancy (CWE-208) in the pam_userdb module's plaintext-password comparison path in modules/pam_userdb/pam_userdb.c that allows a local or network-adjacent attacker able to repeatedly drive authentication through a calling service to recover the plaintext password of a target account by measuring response-timing differences.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-54411"
+      ],
+      "primary_record_sha256": "fcebac8bc19d24812ae417c21489e65f2eabd13973a5c6b887ae27a7f5475e8c"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-56391",
+      "cve": "CVE-2026-56391",
+      "packages_before": [
+        {
+          "name": "coreutils",
+          "version": "9.7-3"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "GNU coreutils uniq is vulnerable to an out\u2011of\u2011bounds read due to incorrect handling of multibyte input when the -w (--check-chars) option is used. The find_field() function miscalculates the byte length of characters by repeatedly processing a fixed pointer instead of advancing through the input, resulting in an inflated length value.  This incorrect length is later used in a memcmp operation, causing reads beyond the allocated buffer when processing crafted multibyte input.  When running GNU coreutils uniq with attacker-provided arguments, this behavior leads to a crash and potential adjacent heap memory exposure.   This issue has been fixed in the commit d64e35a8a4c0e4608321433e0d84d917e4e36371.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-56391"
+      ],
+      "primary_record_sha256": "98ecf8cfa2cda5bd11fce73b8d7827adbfe5685fd747fbf04a875690cca57156"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-56392",
+      "cve": "CVE-2026-56392",
+      "packages_before": [
+        {
+          "name": "coreutils",
+          "version": "9.7-3"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "GNU coreutils unexpand is vulnerable to a heap-based buffer overflow due to an integer overflow during buffer allocation when processing large tab stop (-t) values. The multiplication used to calculate the allocation size can wrap around, resulting in an undersized buffer. When processing crafted input, subsequent writes exceed the allocated memory, leading to an out\u2011of\u2011bounds heap write.  When running GNU coreutils unexpand with attacker-provided large tab stop (-t) arguments, this behavior leads to a crash and potentially achieve a heap write primitive depending on memory layout.           This issue has been fixed in the commit b60a159fdc5bfcf9988d3a4cb6f53abe8ad5d35d",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-56392"
+      ],
+      "primary_record_sha256": "5d940ba30f22c355ec220071855f347f7f87a2dc958169ad9a0aa13574423e9c"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-5704",
+      "cve": "CVE-2026-5704",
+      "packages_before": [
+        {
+          "name": "tar",
+          "version": "1.35+dfsg-3.1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in tar. A remote attacker could exploit this vulnerability by crafting a malicious archive, leading to hidden file injection with fully attacker-controlled content. This bypasses pre-extraction inspection mechanisms, potentially allowing an attacker to introduce malicious files onto a system without detection.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-5704"
+      ],
+      "primary_record_sha256": "c9c599db1cea6784149f420fd56cf22328860113ed070c01e504c27679c4931f"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-6238",
+      "cve": "CVE-2026-6238",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Distinct invalid DNS RDATA path in deprecated DNS printing functions. Primary advisory explicitly excludes normal resolver path; relevant imports and debugging tools absent.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "The deprecated functions ns_printrrf, ns_printrr and fp_nquery in the GNU C Library version 2.0.1 to version 2.43 fail to validate the RDATA content against the RDATA length in a DNS response when processing A6, CERT, LOC, TKEY or TSIG records, which may allow an attacker to craft a DNS response, causing a target application to crash or read uninitialized memory.  These functions are for application debugging only and hence not in the path of code executed by the DNS resolver.  Further, they have been deprecated since version 2.34 and should not be used by any new applications.  Applications should consider porting away from these interfaces since they may be removed in future versions.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-6238"
+      ],
+      "primary_record_sha256": "53fb1ef18629d4d08d19962eca7063ab9223617477661b00c785d7b30b22278a"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-6368",
+      "cve": "CVE-2026-6368",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires wordexp WRDE_APPEND and wordfree. No wordexp import, shell, user environment expansion or user-controlled spawn command.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "Calling wordexp with WRDE_APPEND in the GNU C Library version 2.0 to version 2.43\u00a0can cause the interface to return invalid memory in the we_wordv member, which on subsequent calls to wordfree may abort the process.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-6368"
+      ],
+      "primary_record_sha256": "e3c0422ec1902bad7885d2c232a5ca96836048387a2f1ccae3339b431bc7e461"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-6791",
+      "cve": "CVE-2026-6791",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires untrusted tilde/user input passed to wordexp. No wordexp import or shell/path-expansion endpoint; client paths rejected rather than expanded.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "When expanding paths that begin with a tilde (~) followed by a username, the internal parse_tilde function extracts the username to determine the user's home directory.  The implementation allocates memory for this username directly on the stack using the strndupa macro. Because the size of this allocation was determined by the length of the user-supplied input without any bounds checks, passing an excessively long username e.g. thousands of characters, forces the thread to exhaust its stack space. Thus if an application passes untrusted, attacker-controlled input to the wordexp function, an attacker can trigger a stack clash.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-6791"
+      ],
+      "primary_record_sha256": "7fb6825680d881469837871673bcc7c14ba8bb1fadec53fc50f480d77693402e"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-76642",
+      "cve": "CVE-2026-76642",
+      "packages_before": [
+        {
+          "name": "util-linux",
+          "version": "2.41.5-0+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "util-linux versions through 2.41.5 and 2.42.2 fail to check mount helper exit status before running post-mount hooks, allowing unprivileged users to execute privileged operations on pre-existing filesystems. Attackers can exploit X-mount.idmap or X-mount.owner hooks to clone filesystems with inherited suid bits or modify target inode permissions after a helper fails, achieving privilege escalation.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-76642"
+      ],
+      "primary_record_sha256": "5a8b89dce583a178ac9a79ec8f0b09520b7cbb5b96ef8682ce15e86b4814a70a"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-77117",
+      "cve": "CVE-2026-77117",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "SHIFT_JISX0213 glibc gconv retry loop. No gconv module payload is copied to runtime; transport is UTF-8 JSON and Node converters use bundled ICU. No arbitrary iconv API.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "Converting crafted SHIFT_JISX0213 input to UCS-4 or the internal wide character encoding, for example with iconv, in the GNU C Library version 2.3 to 2.44 may result in the converter making no progress, causing the calling application to hang.  Some SHIFT_JISX0213 sequences decode to two code points.  If the output buffer has room for only the first one, the converter stores the second in the conversion state and returns E2BIG, but it never clears that pending character after emitting it on the next call.  The converter then keeps emitting the pending character without consuming further input, so an application that retries the conversion loops forever. The input must be attacker controlled and the application must convert it with an output buffer small enough to split the two code points. Only the SHIFT_JISX0213 character set is affected, which is not commonly used.  The related defect in the EUC_JISX0213 converter is tracked separately as CVE-2026-80489.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-77117"
+      ],
+      "primary_record_sha256": "9094106343d7d6b0d68be2dac0d9b0087a78aa62fe3e15199299ba2337f53223"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-78408",
+      "cve": "CVE-2026-78408",
+      "packages_before": [
+        {
+          "name": "util-linux",
+          "version": "2.41.5-0+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "The nsenter --join-cgroup option opens the target cgroup.procs file as root and leaves that file descriptor open across later namespace and credential changes and across execve(). Because the kernel checks later cgroup migrations using the credentials from the original open, a program run in an attacker-controlled target can inherit root's ability to move host processes between cgroups. After a privileged operator uses --join-cgroup against that target, an unprivileged user can migrate and terminate unrelated root processes.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-78408"
+      ],
+      "primary_record_sha256": "d2a4deae9c1fc7bac3918232ea1ce4a27402fadc9a2a5571a1efd101c35654d1"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-78409",
+      "cve": "CVE-2026-78409",
+      "packages_before": [
+        {
+          "name": "util-linux",
+          "version": "2.41.5-0+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "The X-mount.subdir option uses a detached-tree fast path on Linux 6.15 and later and passes the configured subdirectory to open_tree() with AT_SYMLINK_NOFOLLOW. That flag does not stop intermediate symlink traversal or keep resolution inside the newly mounted filesystem. A local unprivileged user with an fstab-authorized X-mount.subdir entry can attach a host path at the intended mountpoint.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-78409"
+      ],
+      "primary_record_sha256": "ac9e77045521ca3818ab88301d8cc1f11d519713305b9694e8ab7953c84c51a9"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-78410",
+      "cve": "CVE-2026-78410",
+      "packages_before": [
+        {
+          "name": "util-linux",
+          "version": "2.41.5-0+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "A flaw was found in util-linux. Restricted bind mounts take the source path from fstab but do not pin that source before the privileged mount. A local unprivileged user who can replace the authorized source or a writable ancestor can redirect SUID mount(8) to bind another host directory. If the fstab entry also sets X-mount.owner, X-mount.group, or X-mount.mode, root then changes ownership or mode on that redirected inode.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-78410"
+      ],
+      "primary_record_sha256": "b4cdcd8b1fc675cf75b80047d0699059563ed764244d723c1668606345433c88"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-80489",
+      "cve": "CVE-2026-80489",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Separate EUC_JISX0213 glibc gconv retry loop. Affected gconv module payload absent; no user-selectable libc iconv conversion endpoint.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "Converting crafted EUC_JISX0213 input to UCS-4 or the internal wide character encoding, for example with iconv, in the GNU C Library version 2.3 to 2.44 may result in the converter making no progress, causing the calling application to hang.  Some EUC_JISX0213 sequences decode to two code points.  If the output buffer has room for only the first one, the converter stores the second in the conversion state and returns E2BIG, but it never clears that pending character after emitting it on the next call.  The converter then keeps emitting the pending character without consuming further input, so an application that retries the conversion loops forever. The input must be attacker controlled and the application must convert it with an output buffer small enough to split the two code points. Only the EUC_JISX0213 character set is affected, which is not commonly used.  The related defect in SHIFT_JISX0213 converter is tracked separately as CVE-2026-77117.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-80489"
+      ],
+      "primary_record_sha256": "cb9a323fa20c6096a12eab8919d02cc683c4dfb5d5a7dde0e707dbbdcbd389bc"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-82560",
+      "cve": "CVE-2026-82560",
+      "packages_before": [
+        {
+          "name": "perl",
+          "version": "5.40.1-6+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Pod::Text versions before 6.1.1 for Perl allow CPU and memory exhaustion formatting a POD document whose =over nesting drives the margin to the output width.  Each =over adds its indent to the margin, which wrap() subtracts from the output width to get the space available for text. When that space reaches zero, the line-splitting substitution matches the empty string, and the loop consumes no input while appending the margin padding on every pass.  Formatting an attacker-supplied POD document never returns, and the output grows until memory is exhausted.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-82560"
+      ],
+      "primary_record_sha256": "96c3cbbc0639ea7a609ae91057506a5a7eddce198e119008ecfdfb467bbce331"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-84243",
+      "cve": "CVE-2026-84243",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "conditional accepted limitation",
+      "mitigation_and_rationale": "gettext requires attacker LANGUAGE plus non-C locale and crafted writable .mo catalog. Runtime guard rejects LANGUAGE, LANG=C, no locale/catalog payload, readonly root and no client-to-env mapping. Guard applies to service/gateway entrypoints; alternate entrypoints are outside supported deployment.",
+      "disposition": "ACCEPTED WITH EVIDENCE",
+      "source_details": "The gettext family of functions in the GNU C Library version 2.0 and later accept LANGUAGE environment variable entries that contain '/' or that are equal to \"..\", unless the program is setuid or setgid (AT_SECURE).  An attacker who can set LANGUAGE in the environment of a program that uses gettext can make it load a message catalog (.mo file) from an arbitrary location in the file system.  A crafted .mo file can crash the program through out-of-range offsets, or supply translations whose format directives do not match the arguments passed by the program.  That causes undefined behaviour in the printf family of functions and may allow arbitrary code execution with the privileges of the program.  The safety of message catalogs relies on them being installed in trusted, read-only locations, and the directory traversal bypasses this.  The fix for CVE-2014-0475 rejects \"..\" path components in locale names passed to setlocale or taken from the LC_ALL, LC_* and LANG environment variables.  gettext reads LANGUAGE directly and appends each colon-separated entry to the message catalog directory, so that fix did not cover LANGUAGE.  LANGUAGE is only used when the LC_MESSAGES locale is not \"C\", \"C.<encoding>\" or \"POSIX\", so the attacker must also be able to select another installed locale, for example through LANG or LC_ALL.  Exploitation also requires that the attacker can place the crafted file in a location readable by the target program, and that the environment crosses a trust boundary without the program running as AT_SECURE.  An example is an SSH server that accepts LANGUAGE and LANG from clients through the AcceptEnv directive and restricts an account to a forced command; the attacker may use this to escape the restriction.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-84243"
+      ],
+      "primary_record_sha256": "f6c816c856b6ecec487938d66961526212e78c10237bf13adc5c66605d123d3e"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-85091",
+      "cve": "CVE-2026-85091",
+      "packages_before": [
+        {
+          "name": "zlib",
+          "version": "1:1.3.dfsg+really1.3.1-1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "unrated",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "zlib versions 1.3.1.2 through 1.3.2 contain a heap buffer overflow vulnerability in the gz_vacate() function when processing non-blocking gzwrite() operations with stale external buffer pointers. Attackers can trigger the overflow by calling gzprintf() or gzvprintf() after a write stall, causing an unchecked memmove() to write beyond the internal input buffer boundary.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-85091"
+      ],
+      "primary_record_sha256": "9e3f8dbe005e92ea2dc700d84f4a7ba9ab0c7b9b890bdf542da363cfbb9e1824"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-8674",
+      "cve": "CVE-2026-8674",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "conditional accepted limitation",
+      "mitigation_and_rationale": "Resolver assertion with long first DNS search domain. Guard rejects search/domain entries over 180 bytes and LOCALDOMAIN/RES_OPTIONS; driver pins dns-search=., ndots=0. A host administrator can still mutate Docker DNS files after startup; maintained host/network configuration remains required.",
+      "disposition": "ACCEPTED WITH EVIDENCE",
+      "source_details": "Initializing the DNS stub resolver from an /etc/resolv.conf file, or a LOCALDOMAIN environment variable, whose search list contains a domain of roughly 200 characters or more in the GNU C Library version 2.26 to 2.44 results in an assertion failure which aborts the process.  The resolver truncates the search list when copying it into the fixed-size _res.defdname buffer, then asserts that the copy is consistent with the full configuration.  The consistency check compared against the wrong size and did not handle a first entry that does not fit, so a correctly truncated list failed the assertion.  Any process that resolves names through the library is affected, including long-running processes that reload /etc/resolv.conf on the next query after it changes.  Search domains are commonly written to /etc/resolv.conf from data received over DHCP or from a VPN server, so an attacker on the local network may be able to trigger this without privileges on the target system, subject to validation by the network configuration software.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-8674"
+      ],
+      "primary_record_sha256": "ac7e1fa1d9c9e6196bf0908c2413d37ee1538a1538f535a7e26c701d6c80e619"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-86805",
+      "cve": "CVE-2026-86805",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Requires setuid/setgid AT_SECURE ELF plus $ORIGIN traversal/hardlink race. Runtime copies fixed mode-0555 ELFs only, no privileged/setid program, nonroot, readonly root and no-new-privileges.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A time-of-check to time-of-use (TOCTOU) race condition in the dynamic loader (ld.so) of the GNU C Library (glibc) versions 2.14 through 2.44 allows a local attacker to escalate privileges. When expanding $ORIGIN in DT_RPATH for setuid/setgid (AT_SECURE) programs, glibc validates the lexically normalized search path against the trusted directories but then opens the raw, un-normalized path. On systems where the Linux fs.protected_hardlinks sysctl is disabled, a local attacker who hard-links such a program into an attacker-controlled directory and wins a race to replace an intermediate path component with a symbolic link can direct the loader outside the trusted directory, causing it to load an attacker-controlled shared object and execute arbitrary code with the elevated privileges of the program.  Exploitation requires an installed setuid or setgid binary whose DT_RPATH uses $ORIGIN followed by \"..\" traversal that normalizes into a trusted directory, and the ability to hard-link that binary and win the race by swapping a path component for a symbolic link. Major Linux-based OS distributions ship with fs.protected_hardlinks enabled by default and mitigate the vulnerability.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-86805"
+      ],
+      "primary_record_sha256": "c032535e230d0a9fdd6ce8a319a091c0bb436afe9ff24ca37a9e41f6c2c56ca1"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-89092",
+      "cve": "CVE-2026-89092",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "medium",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected nscd daemon absent and not started. Resolver library presence alone is not nscd execution; no nscd cache/daemon supplied.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "The nscd service in the GNU C Library 2.3.4 onwards may crash due to a  stack overflow when a malicious DNS server returns too large a response  for a DNS query, resulting in degraded DNS resolution for the system.    Exploitation of this bug needs a system that has nscd enabled and using  an untrusted DNS server for name resolution, with the compromised DNS  server being capable of processing records large enough to result in a  stack overflow in an nscd thread stack.\u00a0 During experimentation, bind 9  was unable to handle large records, but that could change in future or  with a different name server.\u00a0 In typical installations, nscd is  executed in an isolated context as its own user without a shell, due to  which any compromise of that service is isolated.    There is a remote possibility of nscd cache corruption if an attacker  manages to get the stack pointer into a desired point in the heap,  potentially resulting in other caches in nscd being overwritten with  corrupt data through the stack overflow, until the buggy code path  eventually results in a crash.    Finally, a crash in nscd may result in performance degradation when  resolving names, but it does not result in a denial of service.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-89092"
+      ],
+      "primary_record_sha256": "c1669b015e920a0166a90a5a4015ab87d359a0d720ee233c3e48827b05d241f7"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-9538",
+      "cve": "CVE-2026-9538",
+      "packages_before": [
+        {
+          "name": "perl",
+          "version": "5.40.1-6+deb13u1"
+        }
+      ],
+      "packages_present_now": [],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "removed OS payload; builder only",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Affected Debian package payload removed from scratch runtime; actual ELF closure/file ownership contains only libc6, libstdc++6 and libgcc-s1. Build-stage packages do not ship. Absence is checked from copied files, not absence of dpkg.",
+      "disposition": "FIXED",
+      "source_details": "Archive::Tar versions before 3.10 for Perl allow memory exhaustion via attacker controlled entry size field in tar header.  _read_tar() reads each entry's payload with $handle->read($$data, $block), where $block is derived from the entry's 12-byte size field in the tar header with no upper bound on that value.  A crafted header declaring a multi-gigabyte size causes Perl to allocate a scalar of that size.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-9538"
+      ],
+      "primary_record_sha256": "eb77fc91f352457e28afc87b739dd48c7952e1834c929e1c4848bc1ef6176f02"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-95619",
+      "cve": "CVE-2026-95619",
+      "packages_before": [
+        {
+          "name": "gcc-14",
+          "version": "14.2.0-19"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libgcc-s1",
+          "version": "14.2.0-19",
+          "source": "gcc-14",
+          "sourceVersion": "14.2.0-19",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "high",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "unresolved",
+      "mitigation_and_rationale": "GCC patch 200183d4 explicitly excludes POSIX memalign path. Exact Debian runtime library on Linux AMD64 rejects 24 SIZE_MAX-near allocations under 64 MiB/CPU/PID limits; no payload memory accessed. Node imports aligned new but presence alone is not vulnerable C11/fallback rounding. Disassembly/symbol/source evidence is retained.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A flaw was found in libstdc++. An integer overflow can occur when processing large inputs to the aligned operator new in the C++ library. This vulnerability could lead to an undersized memory allocation, potentially causing memory corruption or application instability.",
+      "evidence": [
+        "https://github.com/gcc-mirror/gcc/commit/200183d4ab5d57575f3dfebc6af3baf649910b9e",
+        "https://security-tracker.debian.org/tracker/CVE-2026-95619"
+      ],
+      "primary_record_sha256": "9a0db177575f1dec4af84cb9e21ab6bf138457fc6b447c72c9548009bc292a60",
+      "residual_risk": "Do not extend to Wine, non-POSIX aligned_alloc fallback or another architecture/library build; rerun artifact check after image update.",
+      "fixed_version": "gcc-14 14.4.0-3 (forky/sid); gcc-15 15.3.0-5; no fixed trixie package listed"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-95818",
+      "cve": "CVE-2026-95818",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Loader $ORIGIN overflow requires setuid/setgid AT_SECURE program. No setid executable, nonroot/no-new-privileges; no arbitrary ELF execution/mount interface.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "A stack-based buffer overflow in the dynamic loader (ld.so) of the GNU C Library (glibc) versions 2.14 through 2.44 allows a local attacker to crash or corrupt the memory of setuid/setgid (AT_SECURE) programs.  When such a program's DT_RPATH or DT_RUNPATH begins with $ORIGIN and is followed by NUL or '/' the loader both reads past the end of the path buffer and writes past the end of a stack-allocated internal buffer. The corrupted loader stack can lead to a loader crash (denial of service) and limited disclosure of process memory.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-95818"
+      ],
+      "primary_record_sha256": "c7baf8f8f551dae970104ced44b715c483e7b99791f5c2e5bb37e16b4ef4ebe8"
+    },
+    {
+      "id": "DEBIAN-CVE-2026-97399",
+      "cve": "CVE-2026-97399",
+      "packages_before": [
+        {
+          "name": "glibc",
+          "version": "2.41-12+deb13u4"
+        }
+      ],
+      "packages_present_now": [
+        {
+          "name": "libc6",
+          "version": "2.41-12+deb13u4",
+          "source": "glibc",
+          "sourceVersion": "2.41-12+deb13u4",
+          "architecture": "amd64",
+          "scope": "runtime-ELF"
+        }
+      ],
+      "severity": "low",
+      "fixed_versions_in_Debian13_record": [
+        "no fixed version listed; not proof no upstream fix exists"
+      ],
+      "runtime_usage": "dynamically loaded library",
+      "reachable_exploitable": "no identified supported runtime path",
+      "mitigation_and_rationale": "Power8-only strncasecmp optimization. This candidate is built/tested for Linux AMD64, ARM64 is a pending target, and Power architecture is unsupported.",
+      "disposition": "NOT AFFECTED",
+      "source_details": "The strncasecmp function in the GNU C Library 2.24 and later optimized for the Power8 architecture may read one byte beyond the input size limit, which may crash a program when that byte is not readable.  This condition may happen when the input strings to the strncasecmp function are attacker controlled in an application and they match all the way up to the edge of their page and the neighbouring page is either not mapped or is not readable.",
+      "evidence": [
+        "https://security-tracker.debian.org/tracker/CVE-2026-97399"
+      ],
+      "primary_record_sha256": "7c0b70fb6bc711887eaa1644b3a3ec1ae2e0aef5d60ce2577cf70c1acbe26b6c"
+    }
+  ],
+  "native_sqlite": {
+    "engine_before": "3.53.2",
+    "engine_after": "3.54.1",
+    "node": "3.53.4",
+    "note": "OS sqlite removal does not remove static SQLite. Engine updated through rusqlite 0.41.1/libsqlite3-sys 0.39.1. Node SQLite remains in binary but runtime src/docker never imports node:sqlite; only trusted synthetic generator uses that API. Reassess if importing it, accepting SQL or accepting untrusted snapshots in Node."
+  },
+  "review_schema_version": 2,
+  "hcl_free_rebinding": {
+    "date": "2026-11-04",
+    "prior_runtime_manifest_sha256": "be0e7a5a970924d11df1df565a4fdaf9b1ac73cf9d7c38c5b1ca0e3b3be8c3e7",
+    "basis": "Exact Node/OS runtime bytes unchanged; no added native undefined imports; runtime TypeScript unchanged; optional unused HCL parser excluded; all readonly/auth/privacy controls maintained",
+    "limitations": "Only this exact Linux AMD64 default artifact and unchanged deployment conditions; HCL-enabled/native ARM64/MSVC are not covered"
+  }
+}

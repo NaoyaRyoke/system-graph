@@ -1,0 +1,36 @@
+{
+  "name": "system-graph-remote",
+  "version": "0.1.0-beta.1",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=24.11.0"
+  },
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node scripts/test.mjs",
+    "benchmark": "node scripts/scale.mjs",
+    "lint": "tsc --noEmit",
+    "sample": "node scripts/sample.mjs",
+    "demo": "node scripts/demo.mjs",
+    "start": "node dist/src/main.js",
+    "sbom": "python scripts/supply_chain.py",
+    "secret-scan": "python scripts/privacy_scan.py",
+    "soak": "node scripts/scale.mjs soak 1800"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/core": "2.4.0",
+    "@modelcontextprotocol/server": "2.4.0",
+    "zod": "4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.1",
+    "typescript": "5.9.3",
+    "@modelcontextprotocol/client": "2.4.0",
+    "@modelcontextprotocol/node": "2.1.2",
+    "@modelcontextprotocol/sdk": "1.32.2"
+  },
+  "license": "Apache-2.0",
+  "description": "Read-only system graph MCP adapter with a native Rust engine"
+}

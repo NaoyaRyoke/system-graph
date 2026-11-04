@@ -1,0 +1,31 @@
+// Runtime evidence comes from the build-time ELF/file-owner manifest, even without dpkg in scratch.
+import { execFileSync } from 'node:child_process';
+import { mkdirSync,writeFileSync,readFileSync } from 'node:fs';
+import {resolve} from 'node:path';
+const image=process.env.GRAPH_IMAGE??'system-graph-beta:local',context=process.env.DOCKER_CONTEXT_NAME??'default';
+const docker=(...args)=>execFileSync('docker',['--context',context,...args],{encoding:'utf8',timeout:60000,maxBuffer:64*1024*1024});
+// Offline OCI/rootfs audit never invokes Docker; execution evidence is supplied separately.
+const rootfs=process.env.GRAPH_ROOTFS;
+if(rootfs&&(!process.env.GRAPH_IMAGE_INFO||!process.env.GRAPH_NODE_VERSIONS))throw Error('offline artifact identity and executed Node versions required');
+const read=path=>rootfs?readFileSync(resolve(rootfs,'.'+path),'utf8'):docker('run','--rm','--pull=never','--network','none','--read-only','--cap-drop=ALL','--security-opt','no-new-privileges','--entrypoint','node',image,'-e','process.stdout.write(require("fs").readFileSync(process.argv[1]))',path);
+mkdirSync('artifacts',{recursive:true});
+const manifest=JSON.parse(read('/licenses/distribution/runtime-manifest.json'));
+const licenses=JSON.parse(read('/licenses/distribution/dependency-license-inventory.json'));
+const info=rootfs?JSON.parse(readFileSync(process.env.GRAPH_IMAGE_INFO,'utf8')):JSON.parse(docker('image','inspect',image))[0];
+const nodeVersions=rootfs?JSON.parse(readFileSync(process.env.GRAPH_NODE_VERSIONS,'utf8')):JSON.parse(docker('run','--rm','--pull=never','--network','none','--read-only','--cap-drop=ALL','--entrypoint','node',image,'-p','JSON.stringify(process.versions)'));
+if(JSON.stringify(nodeVersions)!==JSON.stringify(manifest.nodeVersions)||licenses.missing.length)throw Error('distribution evidence mismatch');
+writeFileSync('artifacts/runtime-manifest.json',JSON.stringify(manifest,null,2));
+writeFileSync('artifacts/distribution-license-inventory.json',JSON.stringify(licenses,null,2));
+writeFileSync('artifacts/container-notices.txt',read('/licenses/distribution/THIRD_PARTY_NOTICES'));
+writeFileSync('artifacts/container-packages.json',JSON.stringify({image:info.Id,architecture:info.Architecture,size:info.Size,labels:info.Config.Labels,os:manifest.os,osVersion:manifest.osVersion,nodeVersions,packages:manifest.packages},null,2));
+const bom=JSON.parse(readFileSync('artifacts/sbom.cdx.json','utf8'));
+for(const c of bom.components)c.scope='optional';
+for(const c of bom.components)if(manifest.npmRuntime?.some(p=>c.purl===`pkg:npm/${p.name.replace('@','%40')}@${p.version}`))c.scope='required';
+bom.properties.push({name:'runtime-evidence',value:'ELF closure with Debian file ownership, Node bundled versions, license texts and corresponding source archives. Resolved Cargo/npm inventory is conservative build/platform coverage.'});
+bom.components.push({type:'platform',name:'Node.js',version:nodeVersions.node,scope:'required',licenses:[{license:{name:'MIT with bundled third-party licenses; /licenses/node/LICENSE'}}]});
+bom.components.push({type:'library',name:'SQLite (Rust engine static)',version:manifest.nativeEvidence.rustSqlite,scope:'required',licenses:[{license:{name:'SQLite public domain dedication'}}],properties:[{name:'linkage',value:'static libsqlite3-sys; compile header and native link map hash in runtime manifest'}]});
+for(const [name,version]of Object.entries(nodeVersions))if(!['node','modules','napi'].includes(name))bom.components.push({type:'library',name:'Node bundled '+name,version,scope:'required',licenses:[{license:{name:'Preserve exact bundled third-party terms in /licenses/node/LICENSE'}}],properties:[{name:'version-evidence',value:'process.versions; ABI fields excluded; not an independently upgradable OS package'}]});
+for(const p of manifest.packages)bom.components.push({type:'library',name:p.name,version:p.version,purl:`pkg:deb/debian/${p.name}@${encodeURIComponent(p.version)}?distro=debian-${manifest.osVersion}`,scope:'required',licenses:[{license:{name:p.source==='glibc'?'LGPL-2.1-or-later AND BSD and other retained notices':'GPL-3.0-or-later WITH GCC-exception-3.1 and retained notices'}}],properties:[{name:'copyright-evidence',value:'/licenses/os/'+p.name+'/copyright'}]});
+bom.metadata.component.hashes=[{alg:'SHA-256',content:info.Id.replace('sha256:','')}];
+writeFileSync('artifacts/container-sbom.cdx.json',JSON.stringify(bom,null,2));
+console.log(JSON.stringify({runtimePackages:manifest.packages.length,licenseEntries:licenses.entries.length,missingLicenseTexts:licenses.missing.length,image:info.Id}));

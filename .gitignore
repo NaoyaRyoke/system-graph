@@ -1,0 +1,13 @@
+node_modules/
+target/
+dist/
+artifacts/
+.local/
+*.db
+*.db-*
+*.db.*
+*.log
+*.key
+*.pem
+.env*
+__pycache__/

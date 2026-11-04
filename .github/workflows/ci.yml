@@ -1,0 +1,158 @@
+{
+  "name": "candidate-ci",
+  "on": {
+    "pull_request": {},
+    "push": {
+      "branches": [
+        "main"
+      ]
+    },
+    "workflow_dispatch": {}
+  },
+  "permissions": {
+    "contents": "read"
+  },
+  "concurrency": {
+    "group": "${{ github.workflow }}-${{ github.ref }}",
+    "cancel-in-progress": true
+  },
+  "jobs": {
+    "checks": {
+      "strategy": {
+        "fail-fast": false,
+        "matrix": {
+          "os": [
+            "ubuntu-latest",
+            "windows-latest"
+          ]
+        }
+      },
+      "runs-on": "${{ matrix.os }}",
+      "timeout-minutes": 25,
+      "steps": [
+        {
+          "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+        },
+        {
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "24.22.2",
+            "cache": "npm"
+          }
+        },
+        {
+          "name": "Rust toolchain",
+          "run": "rustup toolchain install 1.99.1 --profile minimal --component rustfmt,clippy"
+        },
+        {
+          "run": "npm ci --ignore-scripts --no-audit --no-fund"
+        },
+        {
+          "run": "cargo fmt --manifest-path rust-host/Cargo.toml --check"
+        },
+        {
+          "run": "cargo clippy --manifest-path rust-host/Cargo.toml --locked --all-targets -- -D warnings"
+        },
+        {
+          "run": "cargo test --manifest-path rust-host/Cargo.toml --locked"
+        },
+        {
+          "run": "cargo build --manifest-path rust-host/Cargo.toml --locked"
+        },
+        {
+          "run": "npm run lint"
+        },
+        {
+          "run": "npm run typecheck"
+        },
+        {
+          "run": "npm run build"
+        },
+        {
+          "run": "npm test"
+        },
+        {
+          "run": "npm run demo"
+        },
+        {
+          "run": "python scripts/privacy_scan.py"
+        },
+        {
+          "run": "python scripts/supply_chain.py"
+        },
+        {
+          "run": "python scripts/check_licenses.py"
+        }
+      ]
+    },
+    "linux-image": {
+      "if": "github.event_name != 'pull_request'",
+      "runs-on": "ubuntu-latest",
+      "timeout-minutes": 35,
+      "steps": [
+        {
+          "uses": "actions/checkout@11d5960a326750d5838078e36cf38b85af677262"
+        },
+        {
+          "uses": "actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020",
+          "with": {
+            "node-version": "24.22.2"
+          }
+        },
+        {
+          "run": "npm ci --ignore-scripts --no-audit --no-fund"
+        },
+        {
+          "run": "rustup toolchain install 1.99.1 --profile minimal"
+        },
+        {
+          "run": "cargo build --manifest-path rust-host/Cargo.toml --locked"
+        },
+        {
+          "run": "npm run build"
+        },
+        {
+          "run": "npm run sample"
+        },
+        {
+          "run": "docker build --target verification -t system-graph-beta-verify:local ."
+        },
+        {
+          "run": "docker build --target runtime -t system-graph-beta:local ."
+        },
+        {
+          "run": "node scripts/docker-check.mjs"
+        },
+        {
+          "run": "python scripts/supply_chain.py"
+        },
+        {
+          "run": "node scripts/container_inventory.mjs"
+        },
+        {
+          "run": "python scripts/os_vulnerabilities.py"
+        },
+        {
+          "run": "npm audit --audit-level=high"
+        },
+        {
+          "run": "python scripts/supply_chain.py"
+        },
+        {
+          "run": "python scripts/vulnerabilities.py"
+        },
+        {
+          "run": "python scripts/check_vulnerabilities.py --require-os"
+        },
+        {
+          "uses": "actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02",
+          "with": {
+            "name": "supply-chain-evidence",
+            "path": "artifacts/*bom*\nartifacts/*inventory*\nartifacts/osv.json"
+          },
+          "if": "always()"
+        }
+      ]
+    }
+  }
+}
