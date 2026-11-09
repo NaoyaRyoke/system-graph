@@ -27,7 +27,7 @@ The Rust host must be built separately; MCP startup never downloads or compiles 
 Use the installation commands below. npm run build produces dist/index.js; npm run typecheck
 checks types and npm test runs existing and new protocol tests. npm start and npm run start:stdio
 now select stdio. The old Remote command is npm run start:remote -- CONFIG ENGINE.
-The package remains private; the system-graph bin entry supports local package tooling.
+The package remains private. Its system-graph bin supports npx from this GitHub branch; no npm registry publication is required.
 
 Run npm run sample to generate synthetic snapshots and artifacts/sample-stdio.json.
 For a real snapshot, provision it separately and supply version, expectedGraphSchema, absolute
@@ -36,14 +36,30 @@ localPrincipal: {"principal":"sample-reader","tenant":"..."}.
 Use the generated sample as a shape reference, update the IDs/schema for your snapshot,
 and omit Remote auth. No default identity or graph scanning is performed.
 
+### Recommended: npx from GitHub
+
+After provisioning the Rust host and graph config locally, start the TypeScript MCP layer with:
+
+```sh
+npx -y --package=github:NaoyaRyoke/system-graph#refactor/company-mcp-template system-graph
+```
+
+Set SYSTEM_GRAPH_CONFIG and SYSTEM_GRAPH_ENGINE to their absolute local paths. Git and Node/npm
+are required. On first use npm fetches the GitHub source, installs its JavaScript build dependencies,
+and runs prepare to compile TypeScript. Subsequent use is cached. No Rust host, database or config
+is bundled, downloaded or built by prepare. Node/Rust build commands remain available below.
+Use this branch while it is unmerged; for reproducible trials replace the branch after # with a
+reviewed commit SHA. Do not use bare npx system-graph: this project is not published on npm.
+Do not enable --foreground-scripts on the MCP command, because build output can pollute stdout.
+
 Register the local MCP client using command + args:
 
 ```json
 {
   "mcpServers": {
     "system-graph": {
-      "command": "node",
-      "args": ["/absolute/path/to/system-graph/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "--package=github:NaoyaRyoke/system-graph#refactor/company-mcp-template", "system-graph"],
       "env": {
         "SYSTEM_GRAPH_CONFIG": "/absolute/path/to/system-graph/artifacts/sample-stdio.json",
         "SYSTEM_GRAPH_ENGINE": "/absolute/path/to/system-graph/target/debug/hybrid-engine-host"
@@ -53,11 +69,18 @@ Register the local MCP client using command + args:
 }
 ```
 
-Alternatively append CONFIG and ENGINE after dist/index.js in args. All filesystem paths must be
-absolute, so the client working directory is irrelevant. On Windows use C:/SystemGraph/dist/index.js,
+Alternatively append CONFIG and ENGINE after system-graph in args. All configured filesystem
+paths must be absolute, so the client's working directory is irrelevant. On Windows use
 C:/SystemGraph/artifacts/sample-stdio.json and C:/SystemGraph/target/debug/hybrid-engine-host.exe.
-Set command to an absolute node.exe path if needed. JSON backslashes must be doubled; forward
-slashes work too. Native Windows GNU command+args is covered by stdio regression tests.
+JSON backslashes must be doubled; forward slashes work too. If the MCP client cannot launch npx.cmd,
+use command "cmd" and args ["/d", "/c", "npx", "-y", "--package=github:NaoyaRyoke/system-graph#refactor/company-mcp-template", "system-graph"].
+A locally built checkout can still use command "node" with an absolute dist/index.js argument.
+
+For a local package verification, run npm run test:npx after building the Rust host. It packs the
+runtime with its legal notices, launches that package through the real npx CLI from a path with
+spaces in a different working directory, and checks initialize, tools/list, all six calls, clean EOF and
+stdout purity. The package allowlist excludes tests, graph/config artifacts, caches and Rust binaries.
+The GitHub source prepare build and local node command are separate supported launch paths.
 
 Stdout carries MCP NDJSON only. Diagnostics use stderr. Closing stdin aborts work and closes
 the persistent Rust worker; delivered SIGINT/SIGTERM use the same cleanup. Both legacy initialize
@@ -101,7 +124,7 @@ See [comparison/migration](docs/mcp-template-refactor.md) and
 Node 24.22.2 (minimum 24.11.0), Rust 1.99.1 with rustfmt/Clippy, a C/C++ toolchain, CMake and Python 3.11+ are required. Dependencies are locked. Linux AMD64 and Windows GNU are tested; Windows MSVC and native ARM64 remain unverified acceptance targets.
 
 ```sh
-git clone https://github.com/NaoyaRyoke/system-graph.git
+git clone --branch refactor/company-mcp-template https://github.com/NaoyaRyoke/system-graph.git
 cd system-graph
 npm ci --ignore-scripts --no-audit --no-fund
 cargo build --manifest-path rust-host/Cargo.toml --locked

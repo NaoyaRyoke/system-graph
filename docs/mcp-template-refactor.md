@@ -78,3 +78,7 @@ and exercises current and legacy protocol openings. The existing suite still cov
 and legacy clients, JWT, ingress bounds, cancellation, worker faults and response projection.
 Inspector verification is reproducible with scripts/inspect-stdio.mjs; see README.
 Results and platform limits are recorded in docs/mcp-template-validation.md.
+
+## npx follow-up
+
+The company-style default client command is now npx -y --package=github:NaoyaRyoke/system-graph#refactor/company-mcp-template system-graph. A prepare lifecycle compiles TypeScript from Git source before npm packs it. The files allowlist includes only the compiled MCP runtime, README and existing legal notices; it excludes graph/config/test/cache/Rust artifacts. The Rust host and local graph config remain operator-provisioned. private=true remains; nothing is published to npm. The local node command remains supported. See the README for Windows npx.cmd/cmd setup and npm run test:npx.

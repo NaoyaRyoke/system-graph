@@ -1,9 +1,11 @@
 {
   "mcpServers": {
     "system-graph": {
-      "command": "node",
+      "command": "npx",
       "args": [
-        "/opt/system-graph/dist/index.js"
+        "-y",
+        "--package=github:NaoyaRyoke/system-graph#refactor/company-mcp-template",
+        "system-graph"
       ],
       "env": {
         "SYSTEM_GRAPH_CONFIG": "/opt/system-graph/runtime-stdio.json",
