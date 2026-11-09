@@ -12,3 +12,6 @@ const cfg={version:1,expectedGraphSchema:JSON.parse(readFileSync(resolve(out,'en
 // No usable credential is generated or persisted. The demo creates a RAM token.
 writeFileSync(resolve(out,'sample-template.json'),JSON.stringify(cfg,null,2));
 console.log('PASS: synthetic fixtures generated; no usable credential written');
+
+const {auth: _remoteAuth, ...graphConfig}=cfg;
+writeFileSync(resolve(out,'sample-stdio.json'),JSON.stringify({...graphConfig,localPrincipal:{principal:'sample-reader',tenant:w.tenant}},null,2));

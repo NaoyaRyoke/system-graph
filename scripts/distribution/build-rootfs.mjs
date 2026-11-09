@@ -33,6 +33,7 @@ function licenseTree(source,destination){
 licenseTree('/usr/share/common-licenses',out+'/licenses/os/common-licenses');
 copy('/usr/local/LICENSE','/licenses/node/LICENSE','Node.js');
 for(const [source,destination]of [['/app/node_modules','/app/node_modules'],['/app/dist/src','/app/dist/src'],['/app/docker','/app/docker'],['/app/release-licenses','/licenses/distribution'],['/license-inputs/os-source','/licenses/corresponding-source']]){fs.mkdirSync(path.dirname(out+destination),{recursive:true});fs.cpSync(source,out+destination,{recursive:true});}
+copy('/app/dist/index.js','/app/dist/index.js','system-graph-remote');
 for(const [name,data]of [['passwd','app:x:10001:10001:Application:/nonexistent:/sbin/nologin\n'],['group','app:x:10001:\n'],['nsswitch.conf','hosts: files dns\npasswd: files\ngroup: files\n'],['os-release','ID=debian\nVERSION_ID="13"\n']]){fs.mkdirSync(out+'/etc',{recursive:true});fs.writeFileSync(out+'/etc/'+name,data);}
 const sources=fs.readdirSync('/license-inputs/os-source',{withFileTypes:true}).filter(e=>e.isFile()).map(e=>({file:e.name,sha256:hash('/license-inputs/os-source/'+e.name),bytes:fs.statSync('/license-inputs/os-source/'+e.name).size}));
 const sqliteDirectory=fs.readdirSync('/license-inputs/registry/src')[0];

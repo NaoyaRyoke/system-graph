@@ -13,16 +13,21 @@ const auth=z.discriminatedUnion('mode',[
  z.object({mode:z.literal('dev-bearer'),identities:z.array(z.object({sha256:z.string().regex(/^[a-f0-9]{64}$/),principal:principalSchema}).strict()).min(1).max(16)}).strict(),
  z.object({mode:z.literal('jwt'),issuer:z.url(),audience:z.url(),jwks:z.unknown(),bindings:z.array(binding).min(1).max(16)}).strict()
 ]);
-const configSchema=z.object({version:z.literal(1),expectedGraphSchema:z.string(),graphsRoot:z.string(),workspaces:z.array(workspace).length(1),permissions:z.array(permission).min(1).max(128),auth}).strict();
+export const graphConfigSchema=z.object({version:z.literal(1),expectedGraphSchema:z.string(),graphsRoot:z.string(),workspaces:z.array(workspace).length(1),permissions:z.array(permission).min(1).max(128)}).strict();
+const configSchema=graphConfigSchema.extend({auth}).strict();
 export function buildPublicRuntime(file:string,executable:string){
- const cfg=configSchema.parse(JSON.parse(readFileSync(file,'utf8'))),root=realpathSync(cfg.graphsRoot);
+ const cfg=configSchema.parse(JSON.parse(readFileSync(file,'utf8')));
+ const authProvider=cfg.auth.mode==='jwt'?new JwtAuth(cfg.auth.issuer,cfg.auth.audience,new PinnedJwks(cfg.auth.jwks),cfg.auth.bindings):new HashFixtureAuth(cfg.auth.identities);
+ return {...buildGraphRuntime(cfg,executable),auth:authProvider,authMode:cfg.auth.mode};
+}
+export function buildGraphRuntime(cfg:z.infer<typeof graphConfigSchema>,executable:string){
+ const root=realpathSync(cfg.graphsRoot);
  const workspaces:WorkspaceRegistration[]=cfg.workspaces.map(w=>({...w,database:registeredFile(root,w.database)}));
  const inodes=workspaces.map(w=>{const s=statSync(w.database,{bigint:true});return `${s.dev}:${s.ino}`;});
  if(new Set(inodes).size!==inodes.length||new Set(workspaces.map(w=>JSON.stringify([w.tenant,w.workspace]))).size!==workspaces.length)throw new ApiError('invalid_request');
  const permissions:Permission[]=cfg.permissions;
- const authProvider=cfg.auth.mode==='jwt'?new JwtAuth(cfg.auth.issuer,cfg.auth.audience,new PinnedJwks(cfg.auth.jwks),cfg.auth.bindings):new HashFixtureAuth(cfg.auth.identities);
  const audit:AuditEvent[]=[],metrics:{name:string;value:number;outcome:string}[]=[];
  const hooks={audit:{record:(e:AuditEvent)=>{if(audit.length===1000)audit.shift();audit.push(e);}},metrics:{observe:(name:string,value:number,outcome:string)=>{if(metrics.length===1000)metrics.shift();metrics.push({name,value,outcome});}},rateLimit:new FixedWindowRateLimit(60)};
  const pool=new EnginePool(executable,8,cfg.expectedGraphSchema,hooks.metrics),service=new QueryService(workspaces,permissions,w=>pool.get(w),hooks);
- return {auth:authProvider,authMode:cfg.auth.mode,workspaces,pool,service,audit,metrics,warm:async()=>{await pool.warm(workspaces);for(const w of workspaces)await pool.get(w).call('inventory',{limit:1,scope:{environments:[w.allowedEnvironments[0]],repositories:Object.values(w.repositories)}});},close:async()=>pool.close()};
+ return {workspaces,pool,service,audit,metrics,warm:async()=>{await pool.warm(workspaces);for(const w of workspaces)await pool.get(w).call('inventory',{limit:1,scope:{environments:[w.allowedEnvironments[0]],repositories:Object.values(w.repositories)}});},close:async()=>pool.close()};
 }

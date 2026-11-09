@@ -20,3 +20,7 @@ Typed errors: unauthenticated, permission_denied, not_found, invalid_request, ra
 ## Private Rust contract
 
 NDJSON pipe, API1.0. Envelope: api_version/id/operation/params; response repeats version/id with ok/result or typed error. Unknown fields and incompatible engine contract/schema fail closed. Operations: health, capabilities, query, impact, trace, explain, inventory. Principal/token/tenant claims never enter the engine request; the enterprise service sends only authorized repo/environment scope and server-selected DB. Internal scope is not a public filesystem selector. Operation addition is capability-negotiated; schema changes require a new derived-schema snapshot, not live migration.
+
+## Transports
+
+The same six tool definitions and QueryService handlers serve stdio, /mcp and /mcp-legacy. Stdout is protocol-only; diagnostics use stderr. Stdio binds an explicit OS-local principal and one workspace, with the same policy/projection. Its input buffer is 16KiB. HTTP headers, ingress/auth deadlines and JWT are Remote-specific. See README for command+args registration and the npm start migration.

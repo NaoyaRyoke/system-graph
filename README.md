@@ -1,16 +1,102 @@
-# System Graph Remote MCP
+# System Graph
 
-Read-only system-level graph queries across repositories. A Rust engine performs graph selection, ranking, impact and trace operations; TypeScript handles authentication, authorization, workspace registration and bounded MCP transport.
+System Graph is a read-only MCP server for querying cross-repository system relationships. A Rust engine performs graph selection, ranking, impact and trace operations; TypeScript handles authentication, authorization, workspace registration and bounded MCP transport.
 
 **Version 0.1.0-beta.1 — first public beta candidate, not production-ready.** The distributed host is HCL-free. Full-core Terraform/HCL-enabled artifacts are not cleared for redistribution.
 
 ```text
-MCP client → maintained TLS/auth edge → TypeScript adapter → private JSON pipe → Rust engine → read-only SQLite snapshot
+Remote MCP client → maintained TLS/auth edge → TypeScript adapter → private JSON pipe → Rust engine → read-only SQLite snapshot
 ```
 
 The six tools are `graph_capabilities`, `graph_inventory`, `graph_query`, `graph_impact`, `graph_trace` and `graph_explain`. There is no write, scan, migration, upload or arbitrary path/URL tool. MCP revision: **2026-07-28**. Compatibility uses the official legacy SDK adapter at `/mcp-legacy`; the current endpoint is `/mcp`.
 
-## Build and synthetic demo
+## Architecture and stdio MCP setup
+
+```text
+MCP client → TypeScript MCP server → src/tools/* → QueryService
+                                                     ↓
+                                              EnginePool / RustClient
+                                                     ↓ private NDJSON
+                                              Rust engine → SQLite
+```
+
+The shared server/tool registry serves stdio and both Remote endpoints.
+src/index.ts owns local MCP startup/lifecycle; src/main.ts remains the Remote entrypoint.
+The Rust host must be built separately; MCP startup never downloads or compiles an executable.
+
+Use the installation commands below. npm run build produces dist/index.js; npm run typecheck
+checks types and npm test runs existing and new protocol tests. npm start and npm run start:stdio
+now select stdio. The old Remote command is npm run start:remote -- CONFIG ENGINE.
+The package remains private; the system-graph bin entry supports local package tooling.
+
+Run npm run sample to generate synthetic snapshots and artifacts/sample-stdio.json.
+For a real snapshot, provision it separately and supply version, expectedGraphSchema, absolute
+graphsRoot, exactly one registered workspaces entry, explicit permissions and
+localPrincipal: {"principal":"sample-reader","tenant":"..."}.
+Use the generated sample as a shape reference, update the IDs/schema for your snapshot,
+and omit Remote auth. No default identity or graph scanning is performed.
+
+Register the local MCP client using command + args:
+
+```json
+{
+  "mcpServers": {
+    "system-graph": {
+      "command": "node",
+      "args": ["/absolute/path/to/system-graph/dist/index.js"],
+      "env": {
+        "SYSTEM_GRAPH_CONFIG": "/absolute/path/to/system-graph/artifacts/sample-stdio.json",
+        "SYSTEM_GRAPH_ENGINE": "/absolute/path/to/system-graph/target/debug/hybrid-engine-host"
+      }
+    }
+  }
+}
+```
+
+Alternatively append CONFIG and ENGINE after dist/index.js in args. All filesystem paths must be
+absolute, so the client working directory is irrelevant. On Windows use C:/SystemGraph/dist/index.js,
+C:/SystemGraph/artifacts/sample-stdio.json and C:/SystemGraph/target/debug/hybrid-engine-host.exe.
+Set command to an absolute node.exe path if needed. JSON backslashes must be doubled; forward
+slashes work too. Native Windows GNU command+args is covered by stdio regression tests.
+
+Stdout carries MCP NDJSON only. Diagnostics use stderr. Closing stdin aborts work and closes
+the persistent Rust worker; delivered SIGINT/SIGTERM use the same cleanup. Both legacy initialize
+and current negotiation use SDK v2 serveStdio. The OS account, config access and private pipe
+identify the caller. localPrincipal is fixed for the process lifetime; every call still passes
+the existing permissions/environment/repository policy. Restart to change registration/identity.
+Do not expose this local launcher through an unauthenticated network bridge.
+
+### Available tools and examples
+
+| Tool | Example arguments | Purpose |
+| --- | --- | --- |
+| graph_capabilities | {"workspace":"main"} | API support and bounds |
+| graph_inventory | {"workspace":"main","limit":20} | Scoped nodes/edges and pagination |
+| graph_query | {"workspace":"main","query":"service","limit":10} | Ranked lexical matches |
+| graph_impact | {"workspace":"main","target":"<returned-node-id>"} | Direct/transitive impact |
+| graph_trace | {"workspace":"main","source":"<node-id>","destination":"<node-id>"} | Bounded trace |
+| graph_explain | {"workspace":"main","target":"<returned-node-id>","kind":"node"} | Provenance |
+
+Use IDs returned by inventory/query. Optional environments and repositories narrow registered
+permissions. See [public API](docs/public-api.md) for exact semantics and limits.
+
+### MCP Inspector
+
+Use [MCP Inspector CLI](https://github.com/modelcontextprotocol/inspector/tree/main/clients/cli)
+with a separate installation; it is not a System Graph runtime dependency:
+
+```sh
+npm install --prefix .local/inspector --ignore-scripts --no-audit --no-fund @modelcontextprotocol/inspector@2.14.0
+npm run sample
+node scripts/inspect-stdio.mjs .local/inspector/node_modules/@modelcontextprotocol/inspector/clients/launcher/build/index.js
+```
+
+The runner checks initialize, tools/list and every tool against synthetic graphs using mcpServers
+command+args. It writes ignored artifacts and starts no public listener.
+See [comparison/migration](docs/mcp-template-refactor.md) and
+[validation results](docs/mcp-template-validation.md).
+
+## Installation, build and synthetic demo
 
 Node 24.22.2 (minimum 24.11.0), Rust 1.99.1 with rustfmt/Clippy, a C/C++ toolchain, CMake and Python 3.11+ are required. Dependencies are locked. Linux AMD64 and Windows GNU are tested; Windows MSVC and native ARM64 remain unverified acceptance targets.
 
@@ -28,7 +114,7 @@ The demo creates synthetic graph snapshots and a short-lived RAM credential, exe
 
 ## Authentication and isolation
 
-Self-host behind a maintained TLS/auth boundary. `npm start -- <runtime-config> <engine-binary>` requires explicit workspace/graph registration and permissions. Signed short-lived tokens use RS256 `at+jwt`, pinned public JWKS, exact issuer/resource audience, exp/nbf, `graph:read` and an explicit issuer+subject binding. No automatic user enrollment, arbitrary tenant selection or implicit anonymous fallback exists. Explicit development bearer mode is loopback-only.
+Self-host behind a maintained TLS/auth boundary. `npm run start:remote -- <runtime-config> <engine-binary>` requires explicit workspace/graph registration and permissions. Signed short-lived tokens use RS256 `at+jwt`, pinned public JWKS, exact issuer/resource audience, exp/nbf, `graph:read` and an explicit issuer+subject binding. No automatic user enrollment, arbitrary tenant selection or implicit anonymous fallback exists. Explicit development bearer mode is loopback-only.
 
 OAuth authorization-server discovery, refresh and introspection are not implemented. The JWT adapter is an integration boundary, not a claim of full OAuth/MCP authorization conformance. Browser/BFF authentication is an operator responsibility.
 
@@ -60,3 +146,5 @@ Native ARM64/MSVC acceptance, long-duration soak, full OAuth lifecycle and adver
 Apache-2.0 project license. Preserve LICENSE, NOTICE, THIRD_PARTY_NOTICES, the complete licenses tree and inherited modification notices. [VENDOR.md](VENDOR.md) records upstream origin and local changes. [Dependency licensing](docs/dependency-licenses.md) describes native/source obligations. Source archives include optional full-core dependency declarations; these are not bundled optional dependency implementations. Publish only the audited HCL-free host, never HCL-enabled artifacts.
 
 Report vulnerabilities privately through Security → Advisories → Report a vulnerability. See [SECURITY.md](SECURITY.md); never include real credentials or confidential graph data in a public issue. No npm package or container registry publication is implied by the source prerelease.
+
+Architecture and local launch patterns were informed by [yryuu/mcp-api-requester](https://github.com/yryuu/mcp-api-requester). No reference source or HTTP tool is included; this project is independently maintained.

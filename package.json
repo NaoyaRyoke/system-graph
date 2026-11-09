@@ -7,17 +7,19 @@
     "node": ">=24.11.0"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && node scripts/build-entry.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test.mjs",
     "benchmark": "node scripts/scale.mjs",
     "lint": "tsc --noEmit",
     "sample": "node scripts/sample.mjs",
     "demo": "node scripts/demo.mjs",
-    "start": "node dist/src/main.js",
+    "start": "node dist/index.js",
     "sbom": "python scripts/supply_chain.py",
     "secret-scan": "python scripts/privacy_scan.py",
-    "soak": "node scripts/scale.mjs soak 1800"
+    "soak": "node scripts/scale.mjs soak 1800",
+    "start:stdio": "node dist/index.js",
+    "start:remote": "node dist/src/main.js"
   },
   "dependencies": {
     "@modelcontextprotocol/core": "2.4.0",
@@ -32,5 +34,9 @@
     "@modelcontextprotocol/sdk": "1.32.2"
   },
   "license": "Apache-2.0",
-  "description": "Read-only system graph MCP adapter with a native Rust engine"
+  "description": "Read-only system graph MCP adapter with a native Rust engine",
+  "main": "dist/index.js",
+  "bin": {
+    "system-graph": "dist/index.js"
+  }
 }

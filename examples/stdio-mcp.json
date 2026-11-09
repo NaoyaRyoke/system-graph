@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "system-graph": {
+      "command": "node",
+      "args": [
+        "/opt/system-graph/dist/index.js"
+      ],
+      "env": {
+        "SYSTEM_GRAPH_CONFIG": "/opt/system-graph/runtime-stdio.json",
+        "SYSTEM_GRAPH_ENGINE": "/opt/system-graph/target/debug/hybrid-engine-host"
+      }
+    }
+  }
+}
