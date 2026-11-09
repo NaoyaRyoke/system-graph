@@ -52,6 +52,17 @@ Use this branch while it is unmerged; for reproducible trials replace the branch
 reviewed commit SHA. Do not use bare npx system-graph: this project is not published on npm.
 Do not enable --foreground-scripts on the MCP command, because build output can pollute stdout.
 
+With npm 12, add --allow-git=root for this command only (or add it to the MCP args before --package):
+
+```sh
+npx -y --allow-git=root --package=github:NaoyaRyoke/system-graph#refactor/company-mcp-template system-graph
+```
+
+[npm 12 defaults Git fetching to disabled](https://docs.npmjs.com/cli/v12/using-npm/config/#allow-git).
+This invocation opts in to the requested Git package without changing global npm configuration.
+The GitHub source fetch, automatic prepare build and MCP calls were verified with this command.
+
+
 Register the local MCP client using command + args:
 
 ```json
