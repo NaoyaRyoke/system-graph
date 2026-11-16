@@ -6,10 +6,12 @@ import { impactTool } from './impact.js';
 import { inventoryTool } from './inventory.js';
 import { queryTool } from './query.js';
 import { traceTool } from './trace.js';
+import { registerEolTool } from '../eol/mcp.js';
 
 export const graphTools = [capabilitiesTool, explainTool, impactTool, inventoryTool, queryTool, traceTool] as const;
 
 export function registerGraphTools(server: McpServer, context: ToolContext): void {
+  if(context.eolService)registerEolTool(server,{service:context.eolService,principal:context.principal,signal:context.signal});
   for (const tool of graphTools) {
     server.registerTool(tool.name, {
       description: tool.description,

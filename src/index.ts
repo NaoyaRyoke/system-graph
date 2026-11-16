@@ -1,8 +1,18 @@
 #!/usr/bin/env node
 import { buildStdioRuntime } from './graph/stdio-runtime.js';
 import { listenStdio } from './transports/stdio.js';
+import { runEolStdio } from './eol/stdio.js';
+import { runPlatformStdio } from './platform/runtime.js';
 
 async function main(): Promise<void> {
+  if(process.argv[2]==='--platform') {
+    if(process.argv.length!==4||!process.argv[3])throw new Error('explicit platform config required');
+    await runPlatformStdio(process.argv[3]);return;
+  }
+  if(process.argv[2]==='--eol') {
+    if(process.argv.length!==4||!process.argv[3])throw new Error('explicit EOL config required');
+    await runEolStdio(process.argv[3]);return;
+  }
   const config = process.argv[2] ?? process.env.SYSTEM_GRAPH_CONFIG;
   const executable = process.argv[3] ?? process.env.SYSTEM_GRAPH_ENGINE;
   if (!config || !executable || process.argv.length > 4) throw new Error('explicit configuration required');

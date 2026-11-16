@@ -1,11 +1,13 @@
 import type { CallToolResult } from '@modelcontextprotocol/server';
 import { safeError, type AuthContext, type Operation } from '../contracts.js';
 import type { QueryService } from '../service.js';
+import type { EolQueryService } from '../eol/service.js';
 
 export interface ToolContext {
   service: QueryService;
   principal: AuthContext;
   signal: AbortSignal;
+  eolService?: EolQueryService;
 }
 
 // Public graph projection stays in QueryService; every transport uses this envelope.

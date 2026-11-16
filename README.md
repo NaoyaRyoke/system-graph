@@ -1,6 +1,9 @@
 # System Graph
 
-System Graph is a read-only MCP server for querying cross-repository system relationships. A Rust engine performs graph selection, ranking, impact and trace operations; TypeScript handles authentication, authorization, workspace registration and bounded MCP transport.
+System Graph provides portable TypeScript APIs for cross-repository impact, source
+ingestion, SBOM/runtime composition, CVE/EOL matching and response tracking. The
+read-only MCP adapter calls those APIs without Rust. A native SQLite/Rust adapter
+is retained for compatibility and migration comparison.
 
 **Version 0.1.0-beta.1 — first public beta candidate, not production-ready.** The distributed host is HCL-free. Full-core Terraform/HCL-enabled artifacts are not cleared for redistribution.
 
@@ -8,9 +11,37 @@ System Graph is a read-only MCP server for querying cross-repository system rela
 Remote MCP client → maintained TLS/auth edge → TypeScript adapter → private JSON pipe → Rust engine → read-only SQLite snapshot
 ```
 
-The six tools are `graph_capabilities`, `graph_inventory`, `graph_query`, `graph_impact`, `graph_trace` and `graph_explain`. There is no write, scan, migration, upload or arbitrary path/URL tool. MCP revision: **2026-07-28**. Compatibility uses the official legacy SDK adapter at `/mcp-legacy`; the current endpoint is `/mcp`.
+The native comparison mode serves `graph_capabilities`, `graph_inventory`, `graph_query`, `graph_impact`, `graph_trace` and `graph_explain`. There is no write, scan, migration, upload or arbitrary path/URL tool. MCP revision: **2026-07-28**. Compatibility uses the official legacy SDK adapter at `/mcp-legacy`; the current endpoint is `/mcp`.
 
-## Architecture and stdio MCP setup
+## Portable TypeScript features 1–6
+
+```sh
+npm run build
+npm run test:portable
+npm run sample:portable
+node dist/index.js --platform ABSOLUTE_GENERATED_CONFIG_PATH
+```
+
+The sample command prints a new synthetic config path. This mode exposes nine read
+tools, adding `graph_vulnerability`, `graph_eol` and `graph_remediation` to the graph
+tools above. It uses the TypeScript impact/trace implementation with paths,
+confidence, freshness, scoped shared nodes and explicit pagination. Source, SBOM,
+runtime and notice ingestion plus reevaluation are exported application APIs; MCP
+does not accept acquisition or workflow mutation commands. All portable APIs are
+available at `system-graph-remote/platform`.
+
+See the [platform guide](docs/portable-platform.md), [feature transfer guides](docs/transfer/01-impact.md)
+and [acceptance/review matrix](docs/portable-verification.md). Unsupported source
+formats, versions or incomplete observations remain explicit gaps/errors. Live
+external connections and production operation are not established by synthetic tests.
+
+EOL assessment also has a standalone TypeScript API and a Rust-free local MCP mode:
+run `npm run test:eol`, then `node dist/index.js --eol /absolute/path/to/examples/eol-stdio.json`.
+This mode serves `graph_eol` using operator-provisioned normalized notices/runtime
+inventory, with the existing inventory read policy. See the [EOL transfer guide](docs/eol-transfer.md)
+for input types, support conditions, evidence, pagination and connection interfaces.
+
+## Native comparison architecture and stdio MCP setup
 
 ```text
 MCP client → TypeScript MCP server → src/tools/* → QueryService

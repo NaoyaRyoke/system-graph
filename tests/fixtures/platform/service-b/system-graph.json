@@ -1,0 +1,1 @@
+{"schemaVersion":1,"requires":[{"kind":"database","name":"database-a"}],"provides":[{"kind":"event","name":"event-a"}],"dependsOnServices":[]}

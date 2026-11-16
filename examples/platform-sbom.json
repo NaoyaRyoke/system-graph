@@ -1,0 +1,10 @@
+{
+  "bomFormat": "CycloneDX", "specVersion": "1.6", "version": 1,
+  "metadata": {"component": {"type": "application", "name": "service-a", "bom-ref": "root", "version": "1.0.0", "purl": "pkg:npm/service-a@1.0.0"}},
+  "components": [
+    {"type": "library", "name": "middle-a", "bom-ref": "middle", "version": "1.0.0", "purl": "pkg:npm/middle-a@1.0.0", "scope": "required"},
+    {"type": "library", "name": "library-a", "bom-ref": "library", "version": "1.1.0", "purl": "pkg:npm/library-a@1.1.0", "scope": "required"}
+  ],
+  "dependencies": [{"ref": "root", "dependsOn": ["middle"]}, {"ref": "middle", "dependsOn": ["library"]}, {"ref": "library", "dependsOn": []}],
+  "compositions": [{"aggregate": "complete", "assemblies": ["root"]}]
+}

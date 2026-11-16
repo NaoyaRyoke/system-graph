@@ -2,7 +2,15 @@
 
 Use the pinned toolchains and quick start. Run Rust fmt, Clippy with warnings denied, tests/build; npm lint/typecheck/build/test/demo; privacy scan; license inventory and vulnerability checks. Linux Docker verification is required for networking/signal changes. A failed or unrun CI job must not be described as passed.
 
-**Do not duplicate System Graph semantics in TypeScript.** Rust owns graph selection/ranking/impact/trace; enterprise service owns principals, policy, registry, bounds and redaction. MCP remains an adapter: no transport-specific tenant or graph business logic in the core. Keep legacy protocol compatibility in its adapter. Add regression tests before changing a boundary or error contract.
+Existing Rust graph selection/ranking/impact/trace remains unchanged. Completed
+portable features use independent TypeScript public APIs in `src/platform`; EOL
+assessment is in `src/eol`, with shared notification models in `src/assessments`. Keep MCP handlers
+as adapters and preserve principals, policy, registry, bounds and redaction. Keep
+legacy protocol compatibility in its adapter. Add regression tests before changing
+a boundary or error contract. `npm run test:portable` verifies all six portable
+features without Rust; its transport tests additionally exercise the Rust-free MCP
+mode. Pure API tests need no MCP process. The broader `npm test` also runs the
+native compatibility suite and therefore requires its existing native fixtures.
 
 Treat graph text as untrusted data. Never log credentials, absolute source paths or full malicious input. Do not add anonymous fallback, tenant headers, arbitrary paths/URLs, write tools, automatic registration or unbounded retry/queueing. Operator config, schema and wire changes need versioning and migration notes. Preserve explicit false vs missing values and provenance.
 

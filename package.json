@@ -10,6 +10,9 @@
     "build": "tsc && node scripts/build-entry.mjs",
     "typecheck": "tsc --noEmit",
     "test": "node scripts/test.mjs",
+    "test:eol": "node node_modules/typescript/bin/tsc && node scripts/build-entry.mjs && node --test dist/tests/eol.test.js dist/tests/eol-service.test.js dist/tests/eol-mcp.test.js",
+    "test:portable": "node node_modules/typescript/bin/tsc && node scripts/build-entry.mjs && node scripts/test-portable.mjs",
+    "sample:portable": "node scripts/sample-platform.mjs",
     "benchmark": "node scripts/scale.mjs",
     "lint": "tsc --noEmit",
     "sample": "node scripts/sample.mjs",
@@ -26,18 +29,26 @@
   "dependencies": {
     "@modelcontextprotocol/core": "2.4.0",
     "@modelcontextprotocol/server": "2.4.0",
+    "typescript": "5.9.3",
     "zod": "4.6.7"
   },
   "devDependencies": {
     "@types/node": "22.20.1",
-    "typescript": "5.9.3",
     "@modelcontextprotocol/client": "2.4.0",
     "@modelcontextprotocol/node": "2.1.2",
     "@modelcontextprotocol/sdk": "1.32.2"
   },
   "license": "Apache-2.0",
-  "description": "Read-only system graph MCP adapter with a native Rust engine",
+  "description": "Portable TypeScript system graph APIs and read-only MCP with native compatibility adapter",
   "main": "dist/index.js",
+  "exports": {
+    ".": "./dist/index.js",
+    "./eol": { "types": "./dist/src/eol/index.d.ts", "import": "./dist/src/eol/index.js" },
+    "./eol/mcp": { "types": "./dist/src/eol/mcp.d.ts", "import": "./dist/src/eol/mcp.js" },
+    "./platform": { "types": "./dist/src/platform/index.d.ts", "import": "./dist/src/platform/index.js" },
+    "./platform/mcp": { "types": "./dist/src/platform/mcp.d.ts", "import": "./dist/src/platform/mcp.js" },
+    "./*": "./*"
+  },
   "bin": {
     "system-graph": "dist/index.js"
   },
