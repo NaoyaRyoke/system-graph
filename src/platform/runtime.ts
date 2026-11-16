@@ -36,6 +36,14 @@ export async function buildPlatformRuntime(raw:unknown) {
   const notices=new MemoryNoticeSource(cfg.notices.map(notice=>({tenant:w.tenant,workspace:w.workspace,notice})));
   const snapshots:SnapshotStore<SystemSnapshot>=cfg.snapshotRoot?await FileSnapshotStore.open(cfg.snapshotRoot,systemSnapshotSchema.parse):new MemorySnapshotStore(systemSnapshotSchema.parse);
   const work:WorkStore=cfg.workRoot?await FileWorkStore.open(cfg.workRoot):new MemoryWorkStore();
+  // Startup can reopen an old immutable view. It must not rewind later periodic
+  // evaluations or workflow intent already persisted in workRoot.
+  const eligibleNotices=async(at:string)=>{
+    const eligible=[];
+    for(const notice of cfg.notices){const records=await work.list(w.tenant,w.workspace,notice.id);
+      if(records.every(r=>Math.max(Date.parse(r.evaluatedAt),Date.parse(r.history.at(-1)!.lastAt))<=Date.parse(at)))eligible.push(notice);
+    }return eligible;
+  };
   const loaded:SystemSnapshot[]=[];
   if(cfg.snapshots)for(const snapshot of cfg.snapshots){await snapshots.put(w.tenant,w.workspace,snapshot);loaded.push(snapshot);}
   if(cfg.source){
@@ -43,12 +51,18 @@ export async function buildPlatformRuntime(raw:unknown) {
     if(source.repositories.some(r=>!Object.values(w.repositories).includes(r.repositoryId)||!w.allowedEnvironments.includes(r.environment??'unknown')))throw new Error('unregistered source');
     const roots=Object.fromEntries(source.repositories.map(r=>[r.repositoryId,r.root]));
     const artifacts=source.artifacts as ArtifactInput[];
+    const bootstrapNotices=await eligibleNotices(source.asOf);
     const coordinator=new SystemCoordinator({repositories:source.mode==='git_commit'?new GitRepositorySource(roots):new LocalRepositorySource(roots),artifacts:{read:async()=>structuredClone(artifacts)},
-      runtime:{read:async()=>structuredClone(source.runtime)},notifications:{read:async()=>structuredClone(cfg.notices)}},snapshots,work);
+      runtime:{read:async()=>structuredClone(source.runtime)},notifications:{read:async()=>structuredClone(bootstrapNotices)}},snapshots,work);
     const result=await coordinator.refresh({tenant:w.tenant,workspace:w.workspace,snapshotId:source.snapshotId,asOf:source.asOf,
       repositories:source.repositories.map(({root: _root,...repo})=>repo),...(source.previousSnapshotId?{previousSnapshotId:source.previousSnapshotId}:{}),trigger:'composition_updated',maxAgeDays:cfg.maxAgeDays});
     loaded.push(result.snapshot);
-  }else for(const snapshot of loaded)for(const notice of cfg.notices)await reevaluateNotice(notice,snapshot.composition,work,{tenant:w.tenant,workspace:w.workspace,asOf:snapshot.graph.collectedAt,trigger:'manual',maxAgeDays:cfg.maxAgeDays});
+  }else{
+    const ordered=[...loaded].sort((a,b)=>Date.parse(b.graph.collectedAt)-Date.parse(a.graph.collectedAt)),latest=ordered[0];
+    // A tied timestamp does not establish which distinct snapshot is current.
+    if(latest&&(!ordered[1]||Date.parse(ordered[1].graph.collectedAt)!==Date.parse(latest.graph.collectedAt)))for(const notice of await eligibleNotices(latest.graph.collectedAt))
+      await reevaluateNotice(notice,latest.composition,work,{tenant:w.tenant,workspace:w.workspace,asOf:latest.graph.collectedAt,trigger:'manual',maxAgeDays:cfg.maxAgeDays});
+  }
   const audit:AuditEvent[]=[],metrics:{operation:string;value:number;outcome:string}[]=[];
   const service=new PlatformQueryService(policy,snapshots,notices,work,{audit:{record:e=>{if(audit.length===1000)audit.shift();audit.push(e);}},
     metrics:{observe:(operation,value,outcome)=>{if(metrics.length===1000)metrics.shift();metrics.push({operation,value,outcome});}},rateLimit:new FixedWindowRateLimit(60)},cfg.maxAgeDays);

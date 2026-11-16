@@ -34,6 +34,14 @@ remain available. `AssessmentIdentity`, `AssessmentPage`, `AssessmentStatus`,
 notification vocabulary. They are suitable for future CVE results; no CVE matching
 or exploitability assessment is provided by the EOL evaluator.
 
+Current results advertise `evaluationContract: 2`. `observationRange` retains both
+the earliest and latest observation; stale and future checks use the respective
+bounds rather than letting one conceal the other. A standalone asset's single
+`observedAt` remains supported. A legacy `composition-v1` converted asset without
+its range requires recollection. Applicability-scoped coverage gaps remain attached
+to their artifact/deployment after authorization and prevent definitive exclusion
+or resolution for the affected target. See the [review migration notes](review-followup.md).
+
 ## Input contract and normalization
 
 `schemaVersion: 1` is required; unknown fields and unsupported schemas fail validation.

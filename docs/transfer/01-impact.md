@@ -3,6 +3,7 @@
 API: `impact(graph, options)`, `trace(graph, options)`, `scopeGraph(graph, scope)`.
 Types/schemas: `GraphSnapshot`, `GraphNode`, `GraphEdge`, `GraphEvidence`,
 `graphSnapshotSchema`, `impactOptionsSchema`, `traceOptionsSchema`.
+Reports advertise `analysisContract: 2`; the portable MCP advertises `portable-2`.
 
 ```ts
 import { impact } from 'system-graph-remote/platform';
@@ -19,6 +20,17 @@ observation time. Provenance and paths survive MCP projection subject to the
 existing redaction policy. Every candidate has its shortest discovered path,
 direct/indirect classification, quality and a possible-impact semantic label.
 Service aggregation is separate from node candidates.
+
+Services are repository-owned logical identities with environment/deployment
+bindings. `logicalService` is distinct from `shared`; only permitted bindings and
+their evidence survive scoping. Aggregation includes permitted environments and
+deployment IDs. A source's environment or first deployment cannot fix the logical
+service to that environment. Unknown environments still need explicit permission.
+
+Coverage issues retain their repository and optional artifact/digest/deployment
+applicability. Environment-independent applicability is explicit; environment null
+alone still denotes unknown. Use `coverageIssues` for these typed facts and
+`coverageGaps` for the human-readable summary.
 
 Upstream finds consumers; downstream finds dependencies; both is explicit.
 Cycles are visited once. `totalIsExact` is false on exploration truncation;

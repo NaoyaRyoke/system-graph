@@ -4,6 +4,12 @@ Baseline: `refactor/company-mcp-template`, `67e7bc87649395e72a108f6f5673392fa780
 The pre-existing EOL changes were retained. The portable implementation uses its own
 normalized schema v1 and the existing authorization/redaction boundaries.
 
+The later review at `03da16a` identified seven additional defects plus workflow
+history exhaustion. See [review-followup.md](review-followup.md) for their
+reproductions, corrections, compatibility/migration notes and current validation.
+The A–F table below refers to the original native-migration review, not those
+later A–G findings.
+
 ## Review A–F
 
 The findings were reconfirmed in the current reference implementation. Corrections
@@ -55,8 +61,8 @@ Validation date: 2026-11-16. Host: Windows, Node 24.22.1, TypeScript 5.9.3.
 | --- | --- |
 | `node node_modules/typescript/bin/tsc --noEmit` | Passed |
 | `node node_modules/typescript/bin/tsc` + `node scripts/build-entry.mjs` | Passed |
-| `node scripts/test-portable.mjs` | 41 passed; no Rust build/process required |
-| `node scripts/test.mjs` with existing native executables | 96 compiled tests + 7 distribution tests passed (103 total, including the 41 portable tests) |
+| `node scripts/test-portable.mjs` | 61 passed; no Rust build/process required |
+| `node scripts/test.mjs` with existing native executables | 116 compiled tests + 7 distribution tests passed (123 total, including the 61 portable tests) |
 | `node scripts/sample-platform.mjs` | Created a new synthetic local config |
 | Package public API and manifest/lockfile consistency | Verified directly with Node |
 | Existing `scripts/privacy_scan.py` | No findings; reviewed legal-text allowance retained |

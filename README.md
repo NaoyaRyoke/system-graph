@@ -22,8 +22,9 @@ npm run sample:portable
 node dist/index.js --platform ABSOLUTE_GENERATED_CONFIG_PATH
 ```
 
-The sample command prints a new synthetic config path. This mode exposes nine read
-tools, adding `graph_vulnerability`, `graph_eol` and `graph_remediation` to the graph
+The sample command prints a new synthetic config path. This mode exposes ten read
+tools, adding `graph_vulnerability`, `graph_eol`, `graph_remediation` and
+`graph_remediation_history` to the graph
 tools above. It uses the TypeScript impact/trace implementation with paths,
 confidence, freshness, scoped shared nodes and explicit pagination. Source, SBOM,
 runtime and notice ingestion plus reevaluation are exported application APIs; MCP
@@ -31,7 +32,9 @@ does not accept acquisition or workflow mutation commands. All portable APIs are
 available at `system-graph-remote/platform`.
 
 See the [platform guide](docs/portable-platform.md), [feature transfer guides](docs/transfer/01-impact.md)
-and [acceptance/review matrix](docs/portable-verification.md). Unsupported source
+and [acceptance/review matrix](docs/portable-verification.md).
+See the [review follow-up and migration notes](docs/review-followup.md) for
+`portable-2`, independent edge paging and archived history retrieval. Unsupported source
 formats, versions or incomplete observations remain explicit gaps/errors. Live
 external connections and production operation are not established by synthetic tests.
 

@@ -3,7 +3,8 @@ import { id,ApiError } from '../contracts.js';
 import { referenceId,timestamp } from '../assessments/model.js';
 import { eolAssetSchema,type EolSnapshot } from '../eol/model.js';
 import { environmentSchema,graphEvidenceSchema,graphGapSchema,graphSnapshotSchema,type GraphScope,type GraphSnapshot,type GraphNode,type GraphEdge } from './graph.js';
-import { stableId } from './storage.js';
+import { canonical,stableId } from './storage.js';
+import { visibleIssue } from './coverage.js';
 
 /** Deliberately bounded PURL subset: unqualified package identities; unsupported forms stay unknown. */
 export function parsePackageUrl(raw:string):{identity:string;version:string|null}|null {
@@ -22,7 +23,9 @@ export const componentSchema=z.object({ref:z.string().min(1).max(256),name:z.str
   dependencyScope:z.enum(['required','optional','excluded','unknown']),dependencyDepth:z.number().int().nonnegative().nullable()}).strict();
 export const sbomSchema=z.object({format:z.literal('CycloneDX'),specVersion:z.literal('1.6'),rootRef:z.string().max(256).nullable(),
   components:z.array(componentSchema).max(10000),dependencies:z.array(z.object({ref:z.string().max(256),dependsOn:z.array(z.string().max(256)).max(10000)}).strict()).max(10001),
-  complete:z.boolean(),gaps:z.array(z.string().max(128)).max(128)}).strict();
+  complete:z.boolean(),gaps:z.array(z.string().max(128)).max(128),
+  completeness:z.object({assemblies:z.array(z.string().max(256)).max(10000),dependencies:z.array(z.string().max(256)).max(10001)}).strict().optional(),
+}).strict().transform(s=>s.complete&&!s.completeness?{...s,complete:false,gaps:[...s.gaps,'legacy_completeness_unverified']}:s);
 export const artifactSchema=z.object({id:referenceId,repositoryId:id,revision:z.string().min(1).max(180),
   digest:z.string().regex(/^sha256:[a-f0-9]{64}$/),image:z.string().min(1).max(512),observedAt:timestamp,
   sbom:sbomSchema,evidence:z.array(graphEvidenceSchema).max(16)}).strict();
@@ -47,6 +50,14 @@ export type Artifact=z.infer<typeof artifactSchema>;
 export type Deployment=z.infer<typeof deploymentSchema>;
 export type CompositionSnapshot=z.infer<typeof compositionSchema>;
 
+/** Compare physical package facts, not document-local refs or completeness attestations. */
+export function sbomContentFingerprint(a:Artifact){
+  const coordinates=new Map(a.sbom.components.map(c=>[c.ref,canonical({identity:c.identity??c.packageUrl??c.name,version:c.version,scope:c.dependencyScope})]));
+  const coordinate=(ref:string)=>coordinates.get(ref)??'unresolved:'+ref;
+  return canonical({root:a.sbom.rootRef?coordinate(a.sbom.rootRef):null,components:[...coordinates.values()].sort(),
+    dependencies:a.sbom.dependencies.map(d=>({ref:coordinate(d.ref),dependsOn:d.dependsOn.map(coordinate).sort()})).sort((a,b)=>canonical(a).localeCompare(canonical(b)))});
+}
+
 /** CycloneDX 1.6 JSON: retains membership, exact versions, dependency graph and scope. */
 export function importCycloneDx(raw:unknown,metadata:Omit<Artifact,'sbom'|'id'> & {id?:string}):Artifact {
   const component=z.object({'bom-ref':z.string().min(1).max(256).optional(),type:z.string().min(1),name:z.string().min(1).max(256),
@@ -54,7 +65,7 @@ export function importCycloneDx(raw:unknown,metadata:Omit<Artifact,'sbom'|'id'> 
   const input=z.object({bomFormat:z.literal('CycloneDX'),specVersion:z.literal('1.6'),version:z.number().int().min(1).optional(),
     metadata:z.object({component:component.optional()}).passthrough().optional(),components:z.array(z.unknown()).max(10000).default([]),
     dependencies:z.array(z.object({ref:z.string().max(256),dependsOn:z.array(z.string().max(256)).max(10000).default([])}).passthrough()).max(10001).optional(),
-    compositions:z.array(z.object({aggregate:z.string(),assemblies:z.array(z.string()).optional()}).passthrough()).optional(),
+    compositions:z.array(z.object({aggregate:z.string(),assemblies:z.array(z.string()).max(10000).optional(),dependencies:z.array(z.string()).max(10001).optional()}).passthrough()).optional(),
     services:z.array(z.unknown()).optional(),
   }).passthrough().parse(raw);
   const gaps=new Set<string>(),components:Component[]=[],known=new Set<string>();
@@ -81,8 +92,16 @@ export function importCycloneDx(raw:unknown,metadata:Omit<Artifact,'sbom'|'id'> 
   if(components.some(c=>!dependencies.some(d=>d.ref===c.ref)))gaps.add('opaque_component_dependencies');
   if(new Set(dependencies.map(d=>d.ref)).size!==dependencies.length)gaps.add('duplicate_dependency_reference');
   for(const d of dependencies)if(!known.has(d.ref)||d.dependsOn.some(ref=>!known.has(ref)))gaps.add('dangling_dependency_reference');
+  const completeAssemblies=new Set<string>(),completeDependencies=new Set<string>();
   if(!input.compositions?.length)gaps.add('sbom_completeness_unspecified');
-  else if(input.compositions.some(c=>c.aggregate!=='complete')||!input.compositions.some(c=>!c.assemblies?.length||rootRef!==null&&c.assemblies.includes(rootRef)))gaps.add('sbom_declares_incomplete_composition');
+  for(const declaration of input.compositions??[]) {
+    if(!declaration.assemblies?.length&&!declaration.dependencies?.length)gaps.add('composition_scope_unspecified');
+    if(declaration.aggregate!=='complete'){gaps.add('sbom_declares_incomplete_composition');continue;}
+    for(const ref of declaration.assemblies??[])if(known.has(ref))completeAssemblies.add(ref);else gaps.add('composition_reference_unknown');
+    for(const ref of declaration.dependencies??[])if(known.has(ref))completeDependencies.add(ref);else gaps.add('composition_reference_unknown');
+  }
+  if([...known].some(ref=>!completeAssemblies.has(ref)))gaps.add('assembly_completeness_unverified');
+  if([...known].some(ref=>!completeDependencies.has(ref)))gaps.add('dependency_completeness_unverified');
   if(rootRef){
     const depths=new Map<string,number>([[rootRef,0]]),queue=[rootRef],adjacent=new Map(dependencies.map(d=>[d.ref,d.dependsOn]));
     for(let i=0;i<queue.length;i++)for(const child of adjacent.get(queue[i]!)??[])if(!depths.has(child)){depths.set(child,depths.get(queue[i]!)!+1);queue.push(child);}
@@ -90,7 +109,7 @@ export function importCycloneDx(raw:unknown,metadata:Omit<Artifact,'sbom'|'id'> 
     if(components.some(c=>c.dependencyDepth===null))gaps.add('dependency_reachability_unknown');
   }
   return artifactSchema.parse({...metadata,id:metadata.id??stableId('artifact',metadata.repositoryId,metadata.digest),sbom:{format:'CycloneDX',specVersion:'1.6',rootRef,
-    components,dependencies,complete:gaps.size===0,gaps:[...gaps]}});
+    components,dependencies,complete:gaps.size===0,gaps:[...gaps],completeness:{assemblies:[...completeAssemblies].sort(),dependencies:[...completeDependencies].sort()}}});
 }
 export interface RuntimeSource {read(signal?:AbortSignal):Promise<unknown>}
 export class MemoryRuntimeSource implements RuntimeSource {constructor(public data:unknown){}async read(){return structuredClone(this.data);}}
@@ -114,11 +133,12 @@ export function scopeComposition(raw:unknown,scope:GraphScope):CompositionSnapsh
   const s=compositionSchema.parse(raw),visible=(d:{repositoryId:string;environment:string|null})=>scope.repositories.includes(d.repositoryId)&&scope.environments.includes(d.environment??'unknown');
   const deployments=s.deployments.filter(visible).map(d=>({...d,evidence:d.evidence.filter(visible)}));
   const visibleArtifacts=new Set(deployments.map(d=>d.artifactId));
-  return {...s,deployments,artifacts:s.artifacts.filter(a=>scope.repositories.includes(a.repositoryId)&&visibleArtifacts.has(a.id)).map(a=>({...a,evidence:a.evidence.filter(e=>scope.repositories.includes(e.repositoryId)&&(e.environment===null||scope.environments.includes(e.environment)))})),coverage:s.coverage.filter(visible)};
+  return {...s,deployments,artifacts:s.artifacts.filter(a=>scope.repositories.includes(a.repositoryId)&&visibleArtifacts.has(a.id)).map(a=>({...a,evidence:a.evidence.filter(e=>scope.repositories.includes(e.repositoryId)&&(e.environment===null||scope.environments.includes(e.environment)))})),
+    coverage:s.coverage.filter(issue=>visibleIssue(issue,scope,deployments.map(d=>({...d,deploymentId:d.id}))))};
 }
 export function compositionToEol(raw:unknown):EolSnapshot {
   const s=compositionSchema.parse(raw),coverage:EolSnapshot['coverage']=s.coverage.map(g=>({repositoryId:g.repositoryId,environment:g.environment,
-    reason:g.reason==='collection_failed'?'collection_failed':'partial_collection'}));
+    reason:g.reason==='collection_failed'?'collection_failed':'partial_collection',issueReason:g.reason,...(g.appliesTo?{appliesTo:g.appliesTo}:{})}));
   const assets:EolSnapshot['assets']=[];
   for(const d of s.deployments) {
     if(!d.products.length)coverage.push({repositoryId:d.repositoryId,environment:d.environment,reason:'partial_collection'});
@@ -127,9 +147,10 @@ export function compositionToEol(raw:unknown):EolSnapshot {
       const runtimeConfidence=d.state==='observed'?summarize(d.evidence):'inferred' as const;
       const detail=[...product.evidence,...d.evidence.map(e=>({id:e.id,source:e.source,extractor:e.extractor,confidence:e.confidence}))];
       if(detail.length>14)coverage.push({repositoryId:d.repositoryId,environment:d.environment,reason:'partial_collection'});
-      const observedAt=[product.observedAt,d.observedAt,...d.evidence.map(e=>e.observedAt)].sort((a,b)=>Date.parse(a)-Date.parse(b))[0]!;
+      const times=[product.observedAt,...(product.observationRange?[product.observationRange.earliest,product.observationRange.latest]:[]),d.observedAt,...d.evidence.map(e=>e.observedAt)].sort((a,b)=>Date.parse(a)-Date.parse(b)||a.localeCompare(b));
+      const observedAt=times[0]!,observationRange={earliest:times[0]!,latest:times.at(-1)!};
       assets.push({...product,id:stableId('asset',d.id,product.id),repositoryId:d.repositoryId,environment:d.environment,
-        artifactId:d.artifactId,deploymentId:d.id,serviceId:d.serviceId,ownerTeam:d.ownerTeam,observedAt,
+        artifactId:d.artifactId,artifactDigest:d.artifactDigest,deploymentId:d.id,serviceId:d.serviceId,ownerTeam:d.ownerTeam,observedAt,observationRange,
         evidence:[{id:stableId('product-proof',d.id,product.id),source:'product-evidence-summary',extractor:'composition-v1',confidence:summarize(product.evidence)},
           {id:stableId('runtime-proof',d.id),source:'runtime-evidence-summary',extractor:'composition-v1',confidence:runtimeConfidence},...detail.slice(0,14)]});
     }
@@ -170,7 +191,13 @@ export function connectComposition(rawGraph:unknown,rawComposition:unknown):Grap
     const evidence=d.evidence.map(e=>({...e,confidence:d.state==='declared'?'inferred' as const:e.confidence}));
     node({id:d.id,kind:'deployment',label:d.name,repositoryId:d.repositoryId,environment:d.environment,shared:false,
       attributes:{cluster:d.cluster,account:d.account,namespace:d.namespace,image:d.image,state:d.state},evidence});
-    if(!nodes.has(d.serviceId))node({id:d.serviceId,kind:'service',label:d.serviceId,repositoryId:d.repositoryId,environment:d.environment,shared:false,attributes:{ownerTeam:d.ownerTeam},evidence});
+    const previous=nodes.get(d.serviceId);
+    if(previous&&(previous.kind!=='service'||previous.repositoryId!==d.repositoryId||previous.shared))throw new ApiError('invalid_request');
+    const bindings=[...previous?.serviceBindings??(previous?[{environment:previous.environment,deploymentId:null,evidence:previous.evidence}]:[])];
+    const binding={environment:d.environment,deploymentId:d.id,ownerTeam:d.ownerTeam,evidence};
+    const service:GraphNode=previous??{id:d.serviceId,kind:'service',label:d.serviceId,repositoryId:d.repositoryId,environment:null,shared:false,attributes:{},evidence:[]};
+    nodes.set(d.serviceId,{...service,environment:null,logicalService:true,evidence:mergeEvidence([...service.evidence,...evidence]),
+      serviceBindings:[...bindings.filter(b=>b.deploymentId!==d.id),binding].sort((a,b)=>(a.environment??'unknown').localeCompare(b.environment??'unknown')||(a.deploymentId??'').localeCompare(b.deploymentId??''))});
     edge(d.serviceId,d.id,'runs',evidence);if(d.artifactId)edge(d.id,d.artifactId,'deploys',evidence);
   }
   return graphSnapshotSchema.parse({...g,nodes:[...nodes.values()],edges:[...edges.values()],coverage:[...g.coverage,...s.coverage]});

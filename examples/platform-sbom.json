@@ -6,5 +6,5 @@
     {"type": "library", "name": "library-a", "bom-ref": "library", "version": "1.1.0", "purl": "pkg:npm/library-a@1.1.0", "scope": "required"}
   ],
   "dependencies": [{"ref": "root", "dependsOn": ["middle"]}, {"ref": "middle", "dependsOn": ["library"]}, {"ref": "library", "dependsOn": []}],
-  "compositions": [{"aggregate": "complete", "assemblies": ["root"]}]
+  "compositions": [{"aggregate": "complete", "assemblies": ["root", "middle", "library"], "dependencies": ["root", "middle", "library"]}]
 }

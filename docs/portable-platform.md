@@ -77,10 +77,11 @@ application APIs. MCP exposes read tools only.
 
 ## MCP contract
 
-`--platform` serves nine tools: `graph_capabilities`, `graph_inventory`,
+`--platform` serves ten tools: `graph_capabilities`, `graph_inventory`,
 `graph_query`, `graph_impact`, `graph_trace`, `graph_explain`,
-`graph_vulnerability`, `graph_eol` and `graph_remediation`.
-Capabilities identify `portable-1` and `implementation: typescript`.
+`graph_vulnerability`, `graph_eol`, `graph_remediation` and `graph_remediation_history`.
+Capabilities identify `portable-2`, `workSchema: 2`, `inventoryContract: 2` and
+`implementation: typescript`.
 The native v1 response schema is not silently reused for these richer results.
 
 ```json
@@ -119,7 +120,11 @@ a production-only response. Unknown environments use null and require the explic
 
 Request frames remain 16 KiB; responses remain 256 KiB. Pages contain at most 50
 rows. Graph traversal has explicit depth/node/edge bounds, separate from result
-paging. Inventory edges have their own `edgePaging` and `edgeOffset`. CVE artifact
+paging. Inventory edges have their own `edgePaging`, `edgeOffset` and `edgeLimit`;
+their domain is the whole authorized graph, independently of the node page. Query
+edges cover the induced graph over all matching nodes. Use `edgeOffset: null` after
+the edge stream finishes while continuing node pages. References can point to nodes
+on another page. CVE artifact
 pages use the same offset/limit with `artifactsNextOffset`; follow each continuation
 independently. Evidence-heavy single rows may still hit `response_too_large`.
 
@@ -140,6 +145,8 @@ errors, never a complete successful empty parse. Fixed notifications and synthet
 fixtures establish repeatability, not real operational authentication or exposure.
 
 The acceptance/review matrix and actual command results are recorded in
-[portable-verification.md](portable-verification.md). Native comparison tests still
+[portable-verification.md](portable-verification.md). The [03da16a follow-up](review-followup.md)
+records A–G fixes, protocol/storage versions and lossless v1 history migration.
+Native comparison tests still
 need the pre-existing Rust executables; that requirement belongs to compatibility
 verification, not to any completed portable feature.

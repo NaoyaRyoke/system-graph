@@ -1,11 +1,12 @@
 import { eolNoticeSchema, eolSnapshotSchema, evaluationOptionsSchema, numericVersion, compareNumeric,
   type EolNotice, type EolAsset, type EolAssetAssessment, type EolAssessment, type EvaluationOptions } from './model.js';
+import { issueApplies } from '../platform/coverage.js';
 
 function assessAsset(notice:EolNotice, asset:EolAsset, asOf:string, maxAgeDays:number):EolAssetAssessment {
   const row:EolAssetAssessment={
     assetId:asset.id, repositoryId:asset.repositoryId, environment:asset.environment,
     product:asset.product,vendor:asset.vendor,releaseLine:asset.releaseLine,version:asset.version,
-    supportTier:asset.support.tier,ownerTeam:asset.ownerTeam,observedAt:asset.observedAt,supportConditions:[],
+    supportTier:asset.support.tier,ownerTeam:asset.ownerTeam,observedAt:asset.observedAt,observationRange:asset.observationRange??{earliest:asset.observedAt,latest:asset.observedAt},supportConditions:[],
     status:'unknown',reason:'insufficient_information',deadline:null,missing:[],
     path:[{kind:'asset',id:asset.id},
       ...(asset.artifactId?[{kind:'artifact' as const,id:asset.artifactId}]:[]),
@@ -13,8 +14,10 @@ function assessAsset(notice:EolNotice, asset:EolAsset, asOf:string, maxAgeDays:n
       ...(asset.serviceId?[{kind:'service' as const,id:asset.serviceId}]:[])], evidence:asset.evidence,
   };
   const finish=(status:EolAssetAssessment['status'],reason:string)=>({...row,status,reason});
-  const age=Date.parse(asOf)-Date.parse(asset.observedAt);
-  if(age<0)row.missing.push('observation_at_or_before_asOf');
+  const earliest=Math.min(Date.parse(asset.observedAt),Date.parse(row.observationRange.earliest)),latest=Math.max(Date.parse(asset.observedAt),Date.parse(row.observationRange.latest));
+  const age=Date.parse(asOf)-earliest;
+  if(!asset.observationRange&&asset.evidence.some(e=>e.extractor==='composition-v1'))row.missing.push('observation_range_requires_recollection');
+  if(latest>Date.parse(asOf))row.missing.push('observation_at_or_before_asOf');
   if(age>maxAgeDays*86400000)row.missing.push('fresh_observation');
   if(!asset.evidence.length||asset.evidence.some(e=>e.confidence!=='confirmed'))row.missing.push('confirmed_asset_evidence');
   if(!notice.evidence.length||notice.evidence.some(e=>e.confidence!=='confirmed'))row.missing.push('confirmed_notice_evidence');
@@ -50,6 +53,7 @@ export function evaluateEol(rawNotice:unknown,rawSnapshot:unknown,rawOptions:Eva
   const notice=eolNoticeSchema.parse(rawNotice),snapshot=eolSnapshotSchema.parse(rawSnapshot),options=evaluationOptionsSchema.parse(rawOptions);
   const rows=snapshot.assets.map(asset=>{
     const row=assessAsset(notice,asset,options.asOf,options.maxAgeDays);
+    for(const issue of snapshot.coverage)if(issueApplies(issue,asset)){row.status='unknown';row.reason='applicable_coverage_issue';row.missing.push('coverage.'+(issue.issueReason??issue.reason));}
     // Product matching and service attribution are separate facts. A known EOL asset
     // stays affected even when its owning service or team still needs investigation.
     if(asset.serviceId===null)row.missing.push('serviceId');
@@ -67,7 +71,7 @@ export function evaluateEol(rawNotice:unknown,rawSnapshot:unknown,rawOptions:Eva
   const complete=gaps.length===0&&counts.unknown===0&&rows.every(row=>row.missing.length===0);
   const status=counts.affected?'affected':!complete?'unknown':'not_affected';
   const items=rows.slice(options.offset,options.offset+options.limit),hasMore=options.offset+items.length<rows.length;
-  return {schemaVersion:1,kind:'eol',noticeId:notice.id,noticeRevision:notice.revision,snapshotId:snapshot.id,
+  return {schemaVersion:1,evaluationContract:2,kind:'eol',noticeId:notice.id,noticeRevision:notice.revision,snapshotId:snapshot.id,
     asOf:options.asOf,noticeUpdatedAt:notice.updatedAt,noticeEvidence:notice.evidence,snapshotCollectedAt:snapshot.collectedAt,
     criteria:{product:notice.product,vendor:notice.vendor,releaseLine:notice.releaseLine,versions:notice.versions,policies:notice.policies},
     maxAgeDays:options.maxAgeDays,status,complete,counts,total:rows.length,items,limit:options.limit,offset:options.offset,

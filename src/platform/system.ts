@@ -3,9 +3,9 @@ import { ApiError,id } from '../contracts.js';
 import { timestamp,referenceId } from '../assessments/model.js';
 import { collectRepositories,type RepositorySource,type RepositoryRegistration } from './collect.js';
 import { graphSnapshotSchema,type GraphSnapshot } from './graph.js';
-import { compositionSchema,connectComposition,importCycloneDx,ingestRuntime,type RuntimeSource,type Artifact,type CompositionSnapshot } from './composition.js';
+import { compositionSchema,connectComposition,importCycloneDx,ingestRuntime,sbomContentFingerprint,type RuntimeSource,type Artifact,type CompositionSnapshot } from './composition.js';
 import { noticeSchema,reevaluateNotice,type Notice,type WorkStore,type ReevaluationTrigger } from './remediation.js';
-import { canonical,type SnapshotStore } from './storage.js';
+import { stableId,type SnapshotStore } from './storage.js';
 
 export const systemSnapshotSchema=z.object({id:referenceId,schemaVersion:z.literal(1),graph:graphSnapshotSchema,composition:compositionSchema})
   .strict().refine(s=>s.id===s.graph.id&&s.id===s.composition.id&&s.graph.collectedAt===s.composition.collectedAt,'inconsistent snapshot identity');
@@ -35,20 +35,23 @@ export class SystemCoordinator {
         const inputs=await this.sources.artifacts.read(options.signal);
         for(const input of inputs)try{
           const imported=importCycloneDx(input.sbom,input.metadata),old=artifacts.find(a=>a.id===imported.id);
-          if(old&&canonical(old.sbom)!==canonical(imported.sbom))throw new ApiError('invalid_request');
+          if(old&&sbomContentFingerprint(old)!==sbomContentFingerprint(imported)){
+            gaps.push({repositoryId:input.metadata.repositoryId,environment:null,reason:'artifact_sbom_conflict',source:'sbom',appliesTo:{kind:'artifact',artifactId:imported.id,digest:imported.digest}});continue;
+          }
           artifacts=[...artifacts.filter(a=>a.id!==imported.id),imported];
         }catch{
-          gaps.push({repositoryId:input.metadata.repositoryId,environment:null,reason:'unsupported_or_invalid_sbom',source:'sbom'});
+          gaps.push({repositoryId:input.metadata.repositoryId,environment:null,reason:'unsupported_or_invalid_sbom',source:'sbom',
+            appliesTo:{kind:'artifact',artifactId:input.metadata.id??stableId('artifact',input.metadata.repositoryId,input.metadata.digest),digest:input.metadata.digest}});
         }
       }catch{
         artifacts=previous?.composition.artifacts??[];
-        for(const repo of options.repositories)gaps.push({repositoryId:repo.repositoryId,environment:repo.environment,reason:'artifact_collection_failed',source:'artifacts'});
+        for(const repo of options.repositories)gaps.push({repositoryId:repo.repositoryId,environment:null,reason:'artifact_collection_failed',source:'artifacts',appliesTo:{kind:'repository'}});
       }
       let composition:CompositionSnapshot;
       try{composition=await ingestRuntime(this.sources.runtime,artifacts,{snapshotId:options.snapshotId,asOf:options.asOf,...(options.signal?{signal:options.signal}:{})});}
       catch{
         composition={schemaVersion:1,id:options.snapshotId,collectedAt:options.asOf,artifacts:previous?.composition.artifacts??artifacts,deployments:previous?.composition.deployments??[],coverage:[]};
-        for(const repo of options.repositories)gaps.push({repositoryId:repo.repositoryId,environment:repo.environment,reason:'collection_failed',source:'runtime'});
+        for(const repo of options.repositories)gaps.push({repositoryId:repo.repositoryId,environment:null,reason:'collection_failed',source:'runtime',appliesTo:{kind:'repository'}});
       }
       composition.coverage.push(...gaps);
       if(options.signal?.aborted)throw new ApiError('cancelled');

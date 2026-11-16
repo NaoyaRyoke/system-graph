@@ -28,7 +28,7 @@ test('scope filters assets, service links, gaps and counts before matching; unkn
   const unknown=await all.service.execute(all.principal,{...query,environments:['unknown']});
   assert.equal(unknown.total,1); assert.equal(unknown.items[0]!.environment,null);
   const staging=await all.service.execute(all.principal,{...query,environments:['staging']});
-  assert.equal(staging.items[0]!.status,'not_affected');assert.equal(staging.status,'unknown');
+  assert.equal(staging.items[0]!.status,'unknown');assert.ok(staging.items[0]!.missing.includes('coverage.collection_failed'));assert.equal(staging.status,'unknown');
 });
 
 test('authorization and strict inputs precede data access; source binding and revision pinning fail closed',async()=>{

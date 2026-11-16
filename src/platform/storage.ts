@@ -5,9 +5,9 @@ import { ApiError } from '../contracts.js';
 
 export const stableId=(kind:string,...parts:string[])=>`${kind}-${createHash('sha256').update(JSON.stringify(parts)).digest('hex').slice(0,40)}`;
 export function canonical(value:unknown):string {
-  if(Array.isArray(value))return '['+value.map(canonical).join(',')+']';
-  if(value!==null&&typeof value==='object')return '{'+Object.entries(value).sort(([a],[b])=>a<b?-1:1).map(([k,v])=>JSON.stringify(k)+':'+canonical(v)).join(',')+'}';
-  return JSON.stringify(value);
+  if(Array.isArray(value))return '['+value.map(v=>v===undefined?'null':canonical(v)).join(',')+']';
+  if(value!==null&&typeof value==='object')return '{'+Object.entries(value).filter(([,v])=>v!==undefined).sort(([a],[b])=>a<b?-1:1).map(([k,v])=>JSON.stringify(k)+':'+canonical(v)).join(',')+'}';
+  const encoded=JSON.stringify(value);if(encoded===undefined)throw new ApiError('invalid_request');return encoded;
 }
 export interface SnapshotStore<T extends {id:string}> {
   get(tenant:string,workspace:string,id:string):Promise<T|undefined>;

@@ -22,6 +22,13 @@ identifiers, versions, unsupported services or partial compositions remain gaps.
 Unknown top-level descriptive metadata is not interpreted as runtime evidence.
 The importer handles the stated subset; it is not a complete CycloneDX schema validator.
 
+Completeness is explicitly scoped. Complete `assemblies` declarations must cover
+every known component/root, and complete `dependencies` declarations must cover
+every known dependency subject. Neither kind cascades to child/transitive refs.
+Absent scope or dependency-only/partial-scope declarations cannot prove global
+absence. The normalized `completeness` retains both reference sets. Old normalized
+SBOMs with only a complete boolean are conservative until raw data is re-imported.
+
 Build metadata binds immutable artifact ID/digest, source repository/revision,
 image and evidence. Source-file nodes have a separate kind. Runtime records name
 environment/cluster/account/namespace, observed digest, service and team.
@@ -35,6 +42,20 @@ product inventory is a gap. The application normalizer must supply authoritative
 product/vendor/series/entitlement facts rather than infer them from a package name.
 Historical digest-bound artifacts remain available through coordinator refreshes,
 so a new build does not erase an old production deployment.
+
+Coverage now has optional explicit `appliesTo` for repository-wide facts, a named
+artifact/digest or a named deployment. Such applicability survives environment
+projection only when relevant to the authorized target. Null environment without
+applicability is still unknown, not automatically global. An artifact SBOM conflict
+retains the older facts but invalidates definitive matching/closure for that
+artifact; unrelated artifact issues do not invalidate an independently verified
+target. Component coordinates/dependency relationships, rather than doc-local ref
+labels or completeness metadata alone, determine a content conflict.
+
+`compositionToEol` retains `observationRange.earliest/latest` across product,
+deployment and runtime evidence, in addition to its compatible single timestamp.
+Both temporal bounds participate in matching. Older converted assets that lost the
+range require recollection; future support deadlines are not future observations.
 
 Scope filtering exposes only artifacts bound to allowed observed deployments;
 the trusted pure API can also examine artifacts not currently deployed. A common

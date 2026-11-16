@@ -15,7 +15,7 @@ export function registerPlatformTools(server:McpServer,context:PlatformToolConte
   },async(args:unknown,request:ServerContext)=>handlePlatform({...context,signal:AbortSignal.any([context.signal,request.mcpReq.signal])},op,args));
 }
 export function createPlatformServer(context:PlatformToolContext):McpServer {
-  const server=new McpServer({name:'system-graph-typescript',version:'1.0.0'},
+  const server=new McpServer({name:'system-graph-typescript',version:'2.0.0'},
     {capabilities:{tools:{}},cacheHints:{'tools/list':{ttlMs:0,cacheScope:'private'},'server/discover':{ttlMs:0,cacheScope:'private'}}});
   registerPlatformTools(server,context);return server;
 }

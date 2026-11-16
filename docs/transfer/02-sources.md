@@ -35,6 +35,14 @@ execution, type checking or arbitrary HTTP-client recognition. Paths, imported
 aliases, dynamic endpoints and API templates may require further resolvers. Package
 ownership is not guessed from a matching name. Plain documentation is not code.
 
+Static OpenAPI operation paths append to the entire absolute server pathname:
+`https://service-b.invalid/v1` + `/items` becomes `/v1/items`, with or without a
+trailing server slash. Fetch and provided operations share endpoint normalization.
+The supported subset requires one absolute static HTTP(S) server. Server variables,
+templates, relative/multiple servers, and path/operation server overrides are
+reported instead of silently applying the root server. See the
+[OpenAPI Paths Object](https://spec.openapis.org/oas/v3.1.0.html#paths-object).
+
 The native `packages.rs` lists npm/pnpm/Yarn, Python, Cargo, Go, Maven, Gradle and
 .NET manifest readers. Those formats are not claimed as ported merely because the
 native extractor recognized them. All unported formats remain explicit gaps here.

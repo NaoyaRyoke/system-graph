@@ -1,21 +1,26 @@
 import { z } from 'zod';
 import { id, ApiError } from '../contracts.js';
 import { evidenceSchema,referenceId,timestamp } from '../assessments/model.js';
+import { environmentSchema,coverageIssueSchema,visibleIssue } from './coverage.js';
+export { environmentSchema } from './coverage.js';
 
-export const environmentSchema=id.refine(v=>v!=='unknown','unknown environments use null').nullable();
 export const codeSchema=z.string().regex(/^[a-z][a-z0-9_-]{0,63}$/);
 export const graphEvidenceSchema=evidenceSchema.extend({observedAt:timestamp,repositoryId:id,environment:environmentSchema}).strict();
+export const serviceBindingSchema=z.object({environment:environmentSchema,deploymentId:referenceId.nullable(),ownerTeam:id.nullable().optional(),evidence:z.array(graphEvidenceSchema).max(16)}).strict();
 export const graphNodeSchema=z.object({
   id:referenceId,kind:z.enum(['repository','service','api','event','database','package','source-file','build-artifact','deployment','resource']),
   label:z.string().min(1).max(256),repositoryId:id.nullable(),environment:environmentSchema,shared:z.boolean(),
   attributes:z.record(z.string().max(128),z.union([z.string().max(1024),z.number().finite(),z.boolean(),z.null()])).refine(v=>Object.keys(v).length<=32),
   evidence:z.array(graphEvidenceSchema).max(16),
-}).strict().refine(n=>n.shared?n.repositoryId===null&&['package','api','event','database','resource'].includes(n.kind):n.repositoryId!==null,'explicit ownership required');
+  logicalService:z.boolean().optional(),serviceBindings:z.array(serviceBindingSchema).max(10000).optional(),
+}).strict().refine(n=>n.shared?n.repositoryId===null&&['package','api','event','database','resource'].includes(n.kind):n.repositoryId!==null,'explicit ownership required')
+  .refine(n=>!n.logicalService||n.kind==='service'&&!n.shared&&n.repositoryId!==null&&n.environment===null,'logical service ownership required')
+  .refine(n=>!n.serviceBindings||n.kind==='service','service bindings require a service');
 export const graphEdgeSchema=z.object({id:referenceId,source:referenceId,target:referenceId,kind:codeSchema,
   propagatesImpact:z.boolean(),dependencyKind:z.enum(['declared','resolved','runtime','unknown']),declaredRange:z.string().max(256).nullable(),
   evidence:z.array(graphEvidenceSchema).max(16),
 }).strict();
-export const graphGapSchema=z.object({repositoryId:id,environment:environmentSchema,reason:codeSchema,source:z.string().max(256)}).strict();
+export const graphGapSchema=coverageIssueSchema;
 export const observationSchema=z.object({repositoryId:id,environment:environmentSchema,revision:z.string().min(1).max(180),collectedAt:timestamp,
   revisionVerified:z.boolean().default(false),collectionMethod:z.enum(['working_tree','git_commit','provided']).default('provided'),
   contentHashes:z.record(z.string().max(256),z.string().regex(/^[a-f0-9]{64}$/)).default({}),
@@ -39,14 +44,38 @@ export interface GraphScope {repositories:readonly string[];environments:readonl
 export type RelationQuality='confirmed'|'inferred'|'ambiguous'|'stale';
 export interface DependencyPath {nodes:GraphNode[];edges:GraphEdge[]}
 
+/** Legacy snapshots may encode a logical service using the first deployment's env. */
+function logicalServices(g:GraphSnapshot):GraphNode[] {
+  const nodeMap=new Map(g.nodes.map(n=>[n.id,n])),runs=new Map<string,GraphEdge[]>();
+  for(const e of g.edges)if(e.kind==='runs')runs.set(e.source,[...runs.get(e.source)??[],e]);
+  return g.nodes.map(n=>{
+    if(n.kind!=='service'||n.shared||!n.repositoryId||!n.logicalService&&!runs.has(n.id))return n;
+    const bindings=[...n.serviceBindings??(!n.logicalService?[{environment:n.environment,deploymentId:null,evidence:n.evidence}]:[])];
+    for(const e of runs.get(n.id)??[]) {
+      const d=nodeMap.get(e.target);if(!d||d.kind!=='deployment'||d.repositoryId!==n.repositoryId)continue;
+      const evidence=e.evidence.filter(v=>v.repositoryId===n.repositoryId&&v.environment===d.environment);
+      if(evidence.length&&!bindings.some(b=>b.deploymentId===d.id))bindings.push({environment:d.environment,deploymentId:d.id,evidence});
+    }
+    const {ownerTeam:_legacyOwner,...attributes}=n.attributes;
+    return {...n,attributes,logicalService:true,environment:null,serviceBindings:bindings.sort((a,b)=>(a.environment??'unknown').localeCompare(b.environment??'unknown')||(a.deploymentId??'').localeCompare(b.deploymentId??''))};
+  });
+}
+
 /** Shared identities are reachable only along evidenced links from permitted owned nodes. */
 export function scopeGraph(raw:unknown,scope:GraphScope):GraphSnapshot {
   const g=graphSnapshotSchema.parse(raw);
   const visible=(v:{repositoryId:string;environment:string|null})=>scope.repositories.includes(v.repositoryId)&&scope.environments.includes(v.environment??'unknown');
   const independent=(n:GraphNode)=>n.shared||n.kind==='build-artifact'&&n.environment===null;
-  const nodes=g.nodes.map(n=>({...n,evidence:n.evidence.filter(e=>visible(e)||independent(n)&&e.environment===null&&scope.repositories.includes(e.repositoryId))}));
+  const nodes=logicalServices(g).map(n=>{
+    if(n.logicalService){
+      const bindings=(n.serviceBindings??[]).filter(b=>scope.environments.includes(b.environment??'unknown')).map(b=>({...b,evidence:b.evidence.filter(e=>visible(e)&&e.repositoryId===n.repositoryId&&e.environment===b.environment)})).filter(b=>b.evidence.length);
+      const evidence=bindings.flatMap(b=>b.evidence).filter((e,i,a)=>a.findIndex(v=>v.id===e.id&&v.environment===e.environment)===i).slice(0,16);
+      return {...n,serviceBindings:bindings,evidence};
+    }
+    return {...n,evidence:n.evidence.filter(e=>visible(e)||independent(n)&&e.environment===null&&scope.repositories.includes(e.repositoryId))};
+  });
   const candidates=new Map(nodes.filter(n=>n.shared?(n.environment===null||scope.environments.includes(n.environment)):
-    scope.repositories.includes(n.repositoryId!)&&(independent(n)||scope.environments.includes(n.environment??'unknown'))).map(n=>[n.id,n]));
+    scope.repositories.includes(n.repositoryId!)&&(n.logicalService?!!n.serviceBindings?.length:independent(n)||scope.environments.includes(n.environment??'unknown'))).map(n=>[n.id,n]));
   const edges=g.edges.map(e=>({...e,evidence:e.evidence.filter(v=>visible(v)||v.environment===null&&scope.repositories.includes(v.repositoryId)&&
     !!candidates.get(e.source)&&!!candidates.get(e.target)&&independent(candidates.get(e.source)!)&&independent(candidates.get(e.target)!))})).filter(e=>e.evidence.length&&candidates.has(e.source)&&candidates.has(e.target));
   const selected=new Set([...candidates.values()].filter(n=>!independent(n)).map(n=>n.id));
@@ -63,7 +92,8 @@ export function scopeGraph(raw:unknown,scope:GraphScope):GraphSnapshot {
   const filteredNodes=[...candidates.values()].filter(n=>selected.has(n.id));
   const keepContext=(r:Record<string,string>)=>Object.fromEntries(Object.entries(r).filter(([key])=>selected.has(key)));
   return {...g,nodes:filteredNodes,edges:edges.filter(e=>selected.has(e.source)&&selected.has(e.target)),
-    coverage:g.coverage.filter(visible),observations:g.observations.filter(visible),
+    coverage:g.coverage.filter(issue=>visibleIssue(issue,scope,filteredNodes.filter(n=>n.repositoryId!==null).map(n=>({repositoryId:n.repositoryId!,environment:n.environment,
+      ...(n.kind==='build-artifact'?{artifactId:n.id,artifactDigest:typeof n.attributes.digest==='string'?n.attributes.digest:null}:{}),...(n.kind==='deployment'?{deploymentId:n.id}:{}),})))),observations:g.observations.filter(visible),
     context:{compatibility:keepContext(g.context.compatibility) as GraphSnapshot['context']['compatibility'],criticality:keepContext(g.context.criticality) as GraphSnapshot['context']['criticality']}};
 }
 
@@ -130,11 +160,12 @@ export function impact(raw:unknown,options:z.input<typeof impactOptionsSchema>) 
     risk.level=importance.includes('critical')?'CRITICAL':importance.includes('high')?'HIGH':'MEDIUM';risk.reasons=['explicit_breaking_change',...importance.filter((v):v is NonNullable<typeof v>=>!!v)];
   }
   const items=all.slice(o.offset,o.offset+o.limit),hasMore=o.offset+items.length<all.length;
-  return {schemaVersion:1 as const,snapshotId:g.id,asOf:o.asOf,target:g.nodes.find(n=>n.id===o.target)!,items,
+  return {schemaVersion:1 as const,analysisContract:2 as const,snapshotId:g.id,asOf:o.asOf,target:g.nodes.find(n=>n.id===o.target)!,items,
     total:all.length,totalIsExact:walk.bounds.size===0,offset:o.offset,limit:o.limit,hasMore,nextOffset:hasMore?o.offset+items.length:null,
     truncated:walk.bounds.size>0,exploration:{truncated:walk.bounds.size>0,reasons:[...walk.bounds]},
-    serviceAggregation:all.filter(a=>a.node.kind==='service').map(a=>({serviceId:a.node.id,depth:a.depth,quality:a.quality})),
-    complete,coverageGaps:gaps,risk,semantics:'possible_change_impact' as const};
+    serviceAggregation:all.filter(a=>a.node.kind==='service').map(a=>({serviceId:a.node.id,depth:a.depth,quality:a.quality,
+      environments:[...new Set(a.node.logicalService?a.node.serviceBindings?.map(b=>b.environment)??[]:[a.node.environment])],deploymentIds:a.node.serviceBindings?.flatMap(b=>b.deploymentId?[b.deploymentId]:[])??[]})),
+    complete,coverageGaps:gaps,coverageIssues:g.coverage,risk,semantics:'possible_change_impact' as const};
 }
 export function trace(raw:unknown,options:z.input<typeof traceOptionsSchema>) {
   const g=graphSnapshotSchema.parse(raw),o=traceOptionsSchema.parse(options);
@@ -142,6 +173,6 @@ export function trace(raw:unknown,options:z.input<typeof traceOptionsSchema>) {
   const walk=traverse(g,o.source,o.direction,o),path=walk.paths.get(o.destination)??null,gaps=collectionGaps(g,o);
   if(!path)gaps.push('no_path_is_not_proof_of_safety');
   const q=path?pathQuality(path,o):null;if(q&&q!=='confirmed')gaps.push('uncertain_or_stale_relationships');
-  return {schemaVersion:1 as const,snapshotId:g.id,asOf:o.asOf,found:!!path,path,quality:q,conclusion:'unknown' as const,
-    truncated:walk.bounds.size>0,coverageGaps:[...gaps,...walk.bounds],semantics:'dependency_path' as const};
+  return {schemaVersion:1 as const,analysisContract:2 as const,snapshotId:g.id,asOf:o.asOf,found:!!path,path,quality:q,conclusion:'unknown' as const,
+    truncated:walk.bounds.size>0,coverageGaps:[...gaps,...walk.bounds],coverageIssues:g.coverage,semantics:'dependency_path' as const};
 }

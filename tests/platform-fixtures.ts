@@ -20,7 +20,7 @@ export function sbom(version='1.1.0') {
     components:[{type:'library',name:'middle-a','bom-ref':'middle',version:'1.0.0',purl:'pkg:npm/middle-a@1.0.0',scope:'required'},
       {type:'library',name:'library-a','bom-ref':'library',version,purl:`pkg:npm/library-a@${version}`,scope:'required'}],
     dependencies:[{ref:'root',dependsOn:['middle']},{ref:'middle',dependsOn:['library']},{ref:'library',dependsOn:[]}],
-    compositions:[{aggregate:'complete',assemblies:['root']}],};
+    compositions:[{aggregate:'complete',assemblies:['root','middle','library'],dependencies:['root','middle','library']}],};
 }
 export function artifact(version='1.1.0',letter='a'):Artifact {
   return importCycloneDx(sbom(version),{repositoryId:'repo-a',revision:`revision-${letter}`,digest:'sha256:'+letter.repeat(64),image:`service-a:${letter}`,observedAt:asOf,evidence:[evidence('repo-a',null)]});
@@ -45,11 +45,11 @@ export function platformConfig(){
   const inputs=[old,current].map(({sbom,id: _id,...metadata})=>({sbom:{bomFormat:'CycloneDX',specVersion:'1.6',version:1,
     metadata:{component:{type:'application',name:'service-a','bom-ref':'root',version:'1.0.0',purl:'pkg:npm/service-a@1.0.0'}},
     components:sbom.components.filter(c=>c.ref!=='root').map(c=>({type:'library',name:c.name,'bom-ref':c.ref,version:c.version,purl:c.packageUrl,scope:c.dependencyScope})),
-    dependencies:sbom.dependencies,compositions:[{aggregate:'complete',assemblies:['root']}]},metadata}));
+    dependencies:sbom.dependencies,compositions:[{aggregate:'complete',assemblies:sbom.components.map(c=>c.ref),dependencies:sbom.dependencies.map(d=>d.ref)}]},metadata}));
   return {version:1,localPrincipal:{tenant:'tenant-a',principal:'reader-a'},
     workspace:{tenant:'tenant-a',workspace:'main',repositories:{'service-a':'repo-a','service-b':'repo-b'},allowedEnvironments:['production','staging','unknown'],status:'active'},
     permissions:[{tenant:'tenant-a',principal:'reader-a',workspace:'main',repositories:['service-a','service-b'],environments:['production'],operations}],
     notices:[structuredClone(notice),structuredClone(vulnerability)],source:{snapshotId:'snapshot-a',asOf,
       repositories:sourceRegistrations.map(r=>({...r,root:sourceRoots[r.repositoryId]!})),artifacts:inputs,
-      runtime:{schemaVersion:1,deployments:[deployment(old),deployment(current,'staging')],coverage:[]}}};
+      runtime:{schemaVersion:1,deployments:[deployment(old),deployment(current,'staging')],coverage:[] as CompositionSnapshot['coverage']}}};
 }

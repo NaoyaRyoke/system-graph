@@ -23,7 +23,7 @@ export function registerEolTool(server:McpServer,context:EolToolContext):void {
     signal:AbortSignal.any([context.signal,request.mcpReq.signal])},args));
 }
 export function createEolServer(context:EolToolContext):McpServer {
-  const server=new McpServer({name:'system-graph-eol',version:'1.0.0'}, {
+  const server=new McpServer({name:'system-graph-eol',version:'2.0.0'}, {
     capabilities:{tools:{}},cacheHints:{'tools/list':{ttlMs:0,cacheScope:'private'},'server/discover':{ttlMs:0,cacheScope:'private'}},
   });
   registerEolTool(server,context); return server;

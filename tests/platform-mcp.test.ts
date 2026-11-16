@@ -27,7 +27,7 @@ test('all features run from actual source extraction through modern MCP without 
   let stderr='';transport.stderr?.on('data',d=>stderr+=String(d));
   try {
     await client.connect(transport);assert.equal(client.getProtocolEra(),'modern');
-    const list=(await client.listTools()).tools;assert.equal(list.length,9);assert.ok(list.every(t=>t.annotations?.readOnlyHint===true));
+    const list=(await client.listTools()).tools;assert.equal(list.length,10);assert.ok(list.every(t=>t.annotations?.readOnlyHint===true));
     for(const op of ['capabilities','inventory','query','impact','trace','explain','vulnerability','eol','remediation'] as const) {
       const result=await client.callTool({name:'graph_'+op,arguments:request(op)});
       assert.notEqual(result.isError,true,op+': '+JSON.stringify(result));
@@ -47,7 +47,7 @@ test('portable MCP supports the legacy client and keeps the same TypeScript evid
   const transport=new LegacyTransport({command:process.execPath,args:[entry,'--platform',file],cwd:tmpdir(),stderr:'pipe'}),client=new LegacyClient({name:'portable-legacy',version:'1'});
   transport.stderr?.on('data',()=>{});
   try {
-    await client.connect(transport);assert.equal((await client.listTools()).tools.length,9);
+    await client.connect(transport);assert.equal((await client.listTools()).tools.length,10);
     const result=await client.callTool({name:'graph_impact',arguments:request('impact')});
     assert.deepEqual(result.structuredContent,await runtime.service.execute(runtime.principal,'impact',request('impact')));
   }finally{await client.close();assert.ok(dir.startsWith(tmpdir()));await rm(dir,{recursive:true,force:true});}

@@ -1,8 +1,11 @@
 export * from './graph.js';
+export { issueApplies,visibleIssue,coverageIssueSchema } from './coverage.js';
+export type { CoverageIssue,CoverageTarget } from './coverage.js';
 export * from './collect.js';
 export * from './composition.js';
 export * from './vulnerability.js';
 export * from './remediation.js';
+export { migrateLegacyRecord,legacyWorkRecordSchema,historyEntrySchema } from './work-model.js';
 export * from './storage.js';
 export * from './system.js';
 export * from './service.js';

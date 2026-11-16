@@ -6,6 +6,7 @@ import { displayText, relativeSource } from '../redaction.js';
 import { requestContext } from '../request-context.js';
 import type { NoticeSource, SnapshotSource } from '../assessments/model.js';
 import { evaluateEol } from './evaluate.js';
+import { visibleIssue } from '../platform/coverage.js';
 import { eolInputSchema, eolNoticeSchema, eolSnapshotSchema, type EolAssessment, type EolNotice, type EolSnapshot } from './model.js';
 
 export interface EolSources { notices:NoticeSource<EolNotice>; snapshots:SnapshotSource<EolSnapshot> }
@@ -47,7 +48,8 @@ export class EolQueryService {
       const inScope=(v:{repositoryId:string;environment:string|null})=>
         decision.scope.repositories.includes(v.repositoryId)&&decision.scope.environments.includes(v.environment??'unknown');
       // Apply policy to assets AND coverage before evaluation and before calculating totals.
-      const snapshot={...s.data,assets:s.data.assets.filter(inScope),coverage:s.data.coverage.filter(inScope)};
+      const assets=s.data.assets.filter(inScope);
+      const snapshot={...s.data,assets,coverage:s.data.coverage.filter(issue=>visibleIssue({...issue,reason:issue.issueReason??issue.reason,source:'eol'},decision.scope,assets))};
       const result=redact(evaluateEol(n.data,snapshot,{asOf:q.asOf,maxAgeDays:this.maxAgeDays,limit:q.limit,offset:q.offset})) as EolAssessment;
       if(Buffer.byteLength(JSON.stringify(result))>MAX_RESPONSE_BYTES)throw new ApiError('response_too_large');
       resultCount=result.items.length; outcome='ok'; return result;

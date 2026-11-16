@@ -8,6 +8,7 @@ import { createHash } from 'node:crypto';
 import { id, ApiError } from '../contracts.js';
 import { timestamp,referenceId } from '../assessments/model.js';
 import { stableId } from './storage.js';
+import { normalizeEndpoint,openApiEndpoint } from './endpoints.js';
 import { environmentSchema,graphSnapshotSchema,type GraphSnapshot,type GraphNode,type GraphEdge,type GraphEvidence } from './graph.js';
 
 export const repositorySchema=z.object({repositoryId:id,serviceId:referenceId,environment:environmentSchema,
@@ -93,7 +94,8 @@ export async function collectRepositories(rawRegistrations:readonly RepositoryRe
     const gap=(reason:string,file:string)=>out.coverage.push({repositoryId:repo.repositoryId,environment:repo.environment,reason,source:file});
     const evidence=(file:string,confidence:GraphEvidence['confidence']='confirmed',pointer=''):GraphEvidence=>({id:stableId('evidence',repo.repositoryId,repo.revision,file,pointer),source:file,
       extractor:'typescript-collector-v1',confidence,observedAt:options.asOf,repositoryId:repo.repositoryId,environment:repo.environment});
-    const owned=(nodeId:string,kind:GraphNode['kind'],label:string,file:string,attributes:GraphNode['attributes']={})=>addNode({id:nodeId,kind,label,repositoryId:repo.repositoryId,environment:repo.environment,shared:false,attributes,evidence:[evidence(file)]});
+    const owned=(nodeId:string,kind:GraphNode['kind'],label:string,file:string,attributes:GraphNode['attributes']={})=>addNode({id:nodeId,kind,label,repositoryId:repo.repositoryId,environment:kind==='service'?null:repo.environment,shared:false,attributes,evidence:[evidence(file)],
+      ...(kind==='service'?{logicalService:true,serviceBindings:[{environment:repo.environment,deploymentId:null,evidence:[evidence(file)]}]}:{})});
     const shared=(kind:'package'|'api'|'event'|'database',key:string,file:string,attrs:GraphNode['attributes']={})=>addNode({id:stableId(kind,key),kind,label:key.slice(0,256),repositoryId:null,environment:null,shared:true,attributes:attrs,evidence:[evidence(file)]});
     const link=(from:string,to:string,kind:string,file:string,dependencyKind:GraphEdge['dependencyKind']='declared',range:string|null=null,confidence:GraphEvidence['confidence']='confirmed',propagates=true)=>addEdge({id:stableId('edge',from,to,kind),source:from,target:to,kind,propagatesImpact:propagates,dependencyKind,declaredRange:range,evidence:[evidence(file,confidence,from+':'+to+':'+kind)]});
     let files:SourceFile[],revisionVerified=false,collectionMethod:SourceCollection['collectionMethod']='provided';
@@ -107,8 +109,9 @@ export async function collectRepositories(rawRegistrations:readonly RepositoryRe
       if(options.signal?.aborted)throw new ApiError('cancelled');
       gap('collection_failed','repository');
       if(previous) {
-        for(const n of previous.nodes.filter(n=>n.repositoryId===repo.repositoryId||n.shared&&n.evidence.some(e=>e.repositoryId===repo.repositoryId)))addNode({...n,evidence:n.evidence.filter(e=>e.repositoryId===repo.repositoryId)});
-        for(const e of previous.edges.filter(e=>e.evidence.some(v=>v.repositoryId===repo.repositoryId)))addEdge({...e,evidence:e.evidence.filter(v=>v.repositoryId===repo.repositoryId)});
+        const sourceEvidence=(e:GraphEvidence)=>e.repositoryId===repo.repositoryId&&e.extractor==='typescript-collector-v1';
+        for(const n of previous.nodes.filter(n=>n.evidence.some(sourceEvidence)))addNode({...n,evidence:n.evidence.filter(sourceEvidence),...(n.logicalService?{serviceBindings:n.serviceBindings?.filter(b=>b.deploymentId===null)??[]}: {})});
+        for(const e of previous.edges.filter(e=>e.evidence.some(sourceEvidence)))addEdge({...e,evidence:e.evidence.filter(sourceEvidence)});
       }
       out.observations.push({repositoryId:repo.repositoryId,environment:repo.environment,revision:repo.revision,revisionVerified:false,collectionMethod,contentHashes:{},collectedAt:options.asOf,extractor:'typescript-collector-v1',status:'failed',files:[]});continue;
     }
@@ -171,8 +174,6 @@ export async function collectRepositories(rawRegistrations:readonly RepositoryRe
               if(n.expression.getText(parsed)==='fetch') {
                 const arg=n.arguments[0];
                 if(arg&&ts.isStringLiteral(arg))try {
-                  const url=new URL(arg.text,repo.baseUrl??undefined);
-                  if(!['http:','https:'].includes(url.protocol)||url.username||url.password)throw new Error();
                   let method:string|undefined='GET';const options=n.arguments[1];
                   if(options) {
                     if(!ts.isObjectLiteralExpression(options))method=undefined;
@@ -182,7 +183,7 @@ export async function collectRepositories(rawRegistrations:readonly RepositoryRe
                     }
                   }
                   if(!method||!['GET','POST','PUT','PATCH','DELETE','HEAD','OPTIONS','TRACE'].includes(method))gap('unresolved_fetch_method',file.path);
-                  else {const api=shared('api',`${method} ${url.origin}${url.pathname}`,file.path,{method,endpoint:url.origin+url.pathname});link(sourceId,api,'calls',file.path,'declared',null,'inferred');}
+                  else {const endpoint=normalizeEndpoint(method,arg.text,repo.baseUrl??undefined);const api=shared('api',endpoint.key,file.path,{method:endpoint.method,endpoint:endpoint.endpoint});link(sourceId,api,'calls',file.path,'declared',null,'inferred');}
                 } catch {gap('unresolved_api_call',file.path);}
                 else gap('dynamic_api_call',file.path);
               }
@@ -192,9 +193,11 @@ export async function collectRepositories(rawRegistrations:readonly RepositoryRe
           };visit(parsed);
         } else if(/^openapi\.json$/.test(file.path)) {
           const api=z.object({openapi:z.string().regex(/^3\.[01]\./),servers:z.array(z.object({url:z.url()}).passthrough()).min(1),paths:z.record(z.string(),z.record(z.string(),z.unknown()))}).passthrough().parse(JSON.parse(file.content));
-          if(api.servers.length!==1)gap('multiple_api_servers',file.path);
+          if(api.servers.length!==1){gap('multiple_api_servers',file.path);continue;}
           for(const [path,methods]of Object.entries(api.paths))for(const method of Object.keys(methods).filter(m=>['get','post','put','patch','delete','head','options','trace'].includes(m))) {
-            const url=new URL(path,api.servers[0]!.url),target=shared('api',`${method.toUpperCase()} ${url.origin}${url.pathname}`,file.path,{method:method.toUpperCase(),endpoint:url.origin+url.pathname});
+            if('servers'in methods||typeof methods[method]==='object'&&methods[method]!==null&&'servers'in methods[method]){gap('operation_api_servers_not_supported',file.path);continue;}
+            let endpoint;try{endpoint=openApiEndpoint(method,api.servers[0]!.url,path);}catch{gap('unsupported_openapi_endpoint',file.path);continue;}
+            const target=shared('api',endpoint.key,file.path,{method:endpoint.method,endpoint:endpoint.endpoint});
             link(target,repo.serviceId,'served_by',file.path);
           }
           if(file.content.includes('"$ref"')||file.content.includes('"callbacks"'))gap('openapi_references_not_resolved',file.path);
